@@ -1,11 +1,9 @@
--- ReplicatedStorage > module(Folder) > data(Folder) > dialog(Folder) > 1_chapter(ModuleScript)
+-- ReplicatedStorage > module > data > dialog > 1_chapter(ModuleScript)
 local dialog = {
 	prolog_kelas = {
 		dialog_id = "prolog_kelas",
 		mode = "story_image",
-
 		background_img = "rbxassetid://121506339228544",
-
 		lines = {
 			{
 				speaker = "Bu Melinda",
@@ -28,7 +26,7 @@ local dialog = {
 			{
 				speaker = "Najieb",
 				character_img = "rbxassetid://118770143213452",
-				text = "Ah, tidak juga kok, Bu. ",
+				text = "Ah, tidak juga kok, Bu.",
 				voice_id = "rbxassetid://134228950900343",
 			},
 			{
@@ -115,9 +113,7 @@ local dialog = {
 	dermaga_welcome = {
 		dialog_id = "dermaga_welcome",
 		mode = "world_dialog",
-
 		background_img = nil,
-
 		lines = {
 			{
 				speaker = "Kiya",
@@ -130,7 +126,6 @@ local dialog = {
 				text = "Wow, thank you, Kiya! I heard the sand there is as white as rice, is that true?",
 			},
 		},
-
 		choices = {
 			{
 				choice_id = "answer_a",
@@ -143,26 +138,53 @@ local dialog = {
 				is_correct = true,
 			},
 		},
+		-- Dialog yang muncul SETELAH player memilih jawaban
 		after_choices = {
-			answer_a = {speaker = "John", text = "Oh wow that sound amazing!"},
-			answer_b = {speaker = "John", text = "I'd love to see the lighthouse."}
+			answer_a = {
+				dialog_id = "after_choice_a",
+				mode = "world_dialog",
+				lines = {
+					{
+						speaker = "Mister John",
+						character_img = "rbxassetid://JOHN_IMAGE_ID",
+						text = "Oh wow, that sounds amazing!",
+					},
+					{
+						speaker = "Miss Jane",
+						character_img = "rbxassetid://JANE_IMAGE_ID",
+						text = "I really want to see that beautiful island now!",
+					},
+				},
+			},
+			answer_b = {
+				dialog_id = "after_choice_b",
+				mode = "world_dialog",
+				lines = {
+					{
+						speaker = "Mister John",
+						character_img = "rbxassetid://JOHN_IMAGE_ID",
+						text = "I'd love to see the lighthouse!",
+					},
+					{
+						speaker = "Miss Jane",
+						character_img = "rbxassetid://JANE_IMAGE_ID",
+						text = "That sounds like an incredible experience!",
+					},
+				},
+			},
 		},
-		{ speaker = "Kiya", text = "Sure! Before that let's buy souvenirs."}
 	},
 
 	kapal_intro = {
 		dialog_id = "kapal_intro",
 		mode = "story_image",
-
 		background_img = "rbxassetid://KAPAL_KETINGTING_IMAGE_ID",
-
 		lines = {
 			{
 				speaker = "Miss Jane",
 				character_img = "rbxassetid://JANE_IMAGE_ID",
 				text = "Kiya, this boat looks unique. What do local people call it?",
 			},
-
 			{
 				speaker = "Kiya",
 				character_img = "rbxassetid://KIYA_IMAGE_ID",
@@ -174,28 +196,23 @@ local dialog = {
 	kapal_after_quiz = {
 		dialog_id = "kapal_after_quiz",
 		mode = "story_image",
-
 		background_img = "rbxassetid://KAPAL_KETINGTING_IMAGE_ID",
-
 		lines = {
 			{
 				speaker = "Kiya",
 				character_img = "rbxassetid://KIYA_IMAGE_ID",
 				text = "Benar sekali! This traditional boat is called Ketingting, Miss Jane. It uses a specific long-tail motor to move through the shallow waters.",
 			},
-
 			{
 				speaker = "Miss Jane",
 				character_img = "rbxassetid://JANE_IMAGE_ID",
 				text = "Oh, I see! Incredible. And how long does it take to reach the island?",
 			},
-
 			{
 				speaker = "Kiya",
 				character_img = "rbxassetid://KIYA_IMAGE_ID",
 				text = "It takes about 45 minutes, Mister, Miss. So you can just relax and enjoy the beautiful sea breeze and view.",
 			},
-
 			{
 				speaker = "Mister John",
 				character_img = "rbxassetid://JOHN_IMAGE_ID",
@@ -207,16 +224,13 @@ local dialog = {
 	pulau_arrival = {
 		dialog_id = "pulau_arrival",
 		mode = "story_image",
-
 		background_img = "rbxassetid://PULAU_BERAS_BASAH_IMAGE_ID",
-
 		lines = {
 			{
 				speaker = "Miss Jane",
 				character_img = "rbxassetid://JANE_IMAGE_ID",
 				text = "Oh look, the island is gorgeous! But... it is a bit sad to see some plastic bottles over there...",
 			},
-
 			{
 				speaker = "Kiya",
 				character_img = "rbxassetid://KIYA_IMAGE_ID",
@@ -228,16 +242,13 @@ local dialog = {
 	ending_kelas = {
 		dialog_id = "ending_kelas",
 		mode = "story_image",
-
 		background_img = "rbxassetid://CLASSROOM_IMAGE_ID",
-
 		lines = {
 			{
 				speaker = "Kiya",
 				character_img = "rbxassetid://KIYA_IMAGE_ID",
 				text = "...Nah, dari perjalanan hari pertama itu, aku sadar kalau turis asing itu suka banget sama Amplang Ikan kita dan kagum sama keindahan mercusuar. Kalau kita jaga wisatanya tetap bersih dan kelola dengan baik, UMKM warga lokal pasti makin laku keras dan ekonomi Bontang bakal maju!",
 			},
-
 			{
 				speaker = "Bu Melinda",
 				character_img = "rbxassetid://BU_MELINDA_IMAGE_ID",

@@ -1,4 +1,3 @@
--- ServerScriptService > manager(Folder) > scene_manager(ModuleScript)
 local ServerScriptService = game:GetService("ServerScriptService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -42,11 +41,7 @@ local function apply_knowledge(player, value, reason)
 	print("[scene_manager] knowledge:", player.Name, value, reason or "")
 
 	if knowledge_manager and typeof(knowledge_manager.set) == "function" then
-		knowledge_manager.set(
-			player,
-			value,
-			reason
-		)
+		knowledge_manager.set(player, value, reason)
 	else
 		warn("[scene_manager] knowledge_manager.set belum siap")
 	end
@@ -55,13 +50,13 @@ end
 local function run_step(player, step)
 	if step.action == "homepage_hide" then
 		game_event:FireClient(player, "homepage_hide")
-		return
+		return { success = true }
 	end
 
 	if step.action == "dialog" then
 		print("[scene_manager] dialog:", step.dialog_id)
 
-		local success = call_manager(
+		local success, result = call_manager(
 			dialog_manager,
 			"play",
 			player,
@@ -70,10 +65,59 @@ local function run_step(player, step)
 
 		if not success then
 			warn("[scene_manager] sequence dihentikan karena dialog_manager.play belum siap")
-			return false
+			return { success = false, stop = true }
 		end
 
-		return true
+		-- Return hasil dialog (termasuk choice_id jika ada)
+		if result and result.result then
+			return {
+				success = true,
+				choice_id = result.result.choice_id,
+				is_correct = result.result.is_correct,
+			}
+		end
+
+		return { success = true }
+	end
+
+	if step.action == "after_choice_dialog" then
+		print("[scene_manager] after_choice_dialog")
+
+		-- Cek apakah ada choice_result dari step sebelumnya
+		if not step.choice_result or not step.choice_result.choice_id then
+			print("[scene_manager] tidak ada choice_result, skip after_choice_dialog")
+			return { success = true }
+		end
+
+		local choice_id = step.choice_result.choice_id
+		local dialog_data = step.dialog_data
+
+		if not dialog_data or not dialog_data.after_choices then
+			warn("[scene_manager] after_choices data tidak ditemukan")
+			return { success = true }
+		end
+
+		local after_choice = dialog_data.after_choices[choice_id]
+
+		if not after_choice then
+			warn("[scene_manager] after_choice untuk " .. choice_id .. " tidak ditemukan")
+			return { success = true }
+		end
+
+		-- Mainkan after-choice dialog
+		local success, result = call_manager(
+			dialog_manager,
+			"play",
+			player,
+			after_choice.dialog_id
+		)
+
+		if not success then
+			warn("[scene_manager] gagal memainkan after_choice_dialog")
+			return { success = false, stop = true }
+		end
+
+		return { success = true }
 	end
 
 	if step.action == "fade" then
@@ -87,7 +131,7 @@ local function run_step(player, step)
 			step.duration
 		)
 
-		return
+		return { success = true }
 	end
 
 	if step.action == "checkpoint" then
@@ -97,7 +141,7 @@ local function run_step(player, step)
 			checkpoint_id = step.checkpoint_id,
 		})
 
-		return
+		return { success = true }
 	end
 
 	if step.action == "teleport" then
@@ -110,7 +154,7 @@ local function run_step(player, step)
 			step.destination_id
 		)
 
-		return
+		return { success = true }
 	end
 
 	if step.action == "waypoint" then
@@ -121,7 +165,7 @@ local function run_step(player, step)
 			text = step.text,
 		})
 
-		return
+		return { success = true }
 	end
 
 	if step.action == "knowledge_set" then
@@ -131,7 +175,7 @@ local function run_step(player, step)
 			step.reason
 		)
 
-		return
+		return { success = true }
 	end
 
 	if step.action == "minigame" then
@@ -164,7 +208,7 @@ local function run_step(player, step)
 			)
 		end
 
-		return
+		return { success = true }
 	end
 
 	if step.action == "quiz" then
@@ -191,7 +235,7 @@ local function run_step(player, step)
 			)
 		end
 
-		return
+		return { success = true }
 	end
 
 	if step.action == "chapter_complete" then
@@ -201,10 +245,11 @@ local function run_step(player, step)
 			chapter_id = step.chapter_id,
 		})
 
-		return
+		return { success = true }
 	end
 
 	warn("[scene_manager] action tidak dikenal:", step.action)
+	return { success = true }
 end
 
 function scene_manager.play(player, scene_data, sequence_id)
@@ -230,11 +275,27 @@ function scene_manager.play(player, scene_data, sequence_id)
 
 	print("[scene_manager] play sequence:", sequence_id)
 
-	for _, step in ipairs(sequence) do
-		local should_continue = run_step(player, step)
+	local choice_result = nil
+	local last_dialog_step = nil
 
-		if should_continue == false then
+	for step_index, step in ipairs(sequence) do
+		-- Jika step adalah after_choice_dialog, attach choice_result dan dialog_step ke step
+		if step.action == "after_choice_dialog" then
+			step.choice_result = choice_result
+			step.dialog_data = last_dialog_step
+		end
+
+		local step_result = run_step(player, step)
+
+		-- Cek apakah ada error yang menyebabkan kita harus stop
+		if step_result and step_result.stop then
 			break
+		end
+
+		-- Jika step adalah dialog, simpan choice_result untuk digunakan di after_choice_dialog
+		if step.action == "dialog" and step_result and step_result.choice_id then
+			choice_result = step_result
+			last_dialog_step = step
 		end
 
 		task.wait(0.3)
