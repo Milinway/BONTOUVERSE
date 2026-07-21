@@ -1,11 +1,14 @@
 -- ServerScriptService > manager(Folder) > scene_manager(ModuleScript)
 local ServerScriptService = game:GetService("ServerScriptService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
 
 local event_remote = ReplicatedStorage:WaitForChild("event_remote")
 local game_event = event_remote:WaitForChild("game_event")
 
 local scene_manager = {}
+
+local pending_after_choice = {}
 
 local function optional_require(module_script)
 	local success, result = pcall(function()
@@ -137,6 +140,14 @@ local function run_step(player, step)
 
 		print("[scene_manager] mainkan after_choice dialog:", after_choice.dialog_id)
 
+		local user_id = player.UserId
+		local finished_event = Instance.new("BindableEvent")
+
+		pending_after_choice[user_id] = {
+			dialog_id = after_choice.dialog_id,
+			event = finished_event,
+		}
+
 		-- Siapkan after_choice_data untuk dikirim ke client
 		local after_choice_data = {
 			dialog_id = after_choice.dialog_id,
@@ -145,27 +156,17 @@ local function run_step(player, step)
 			lines = after_choice.lines,
 		}
 
-		-- Kirim langsung ke client tanpa melalui dialog_manager
+		-- Kirim langsung ke client
+		print("[scene_manager] kirim after_choice_data ke client")
 		game_event:FireClient(player, "dialog_play", after_choice_data)
 
-		-- Buat BindableEvent untuk menunggu dialog selesai
-		local finished_event = Instance.new("BindableEvent")
+		-- BLOCKING: Tunggu sampai dialog selesai
+		print("[scene_manager] menunggu after_choice dialog selesai...")
+		local result = finished_event.Event:Wait()
+		print("[scene_manager] after_choice dialog SELESAI")
 
-		local function wait_for_dialog_finish()
-			local connection
-			connection = game_event.OnServerEvent:Connect(function(event_player, event_name, payload)
-				if event_player == player and event_name == "dialog_finished" and payload.dialog_id == after_choice.dialog_id then
-					print("[scene_manager] after_choice dialog selesai")
-					connection:Disconnect()
-					finished_event:Fire()
-				end
-			end)
-
-			finished_event.Event:Wait()
-			finished_event:Destroy()
-		end
-
-		task.spawn(wait_for_dialog_finish)
+		pending_after_choice[user_id] = nil
+		finished_event:Destroy()
 
 		return { success = true }
 	end
@@ -302,6 +303,34 @@ local function run_step(player, step)
 	return { success = true }
 end
 
+-- LISTENER: Terima dialog_finished event dari client
+game_event.OnServerEvent:Connect(function(player, event_name, payload)
+	if event_name ~= "dialog_finished" then
+		return
+	end
+
+	local user_id = player.UserId
+
+	-- Cek apakah ini after_choice_dialog yang sedang pending
+	if pending_after_choice[user_id] then
+		local pending = pending_after_choice[user_id]
+
+		if payload and payload.dialog_id == pending.dialog_id then
+			print("[scene_manager] after_choice dialog_finished diterima:", payload.dialog_id)
+			pending.event:Fire()
+			return
+		end
+	end
+end)
+
+Players.PlayerRemoving:Connect(function(player)
+	local user_id = player.UserId
+	if pending_after_choice[user_id] then
+		pending_after_choice[user_id].event:Destroy()
+		pending_after_choice[user_id] = nil
+	end
+end)
+
 function scene_manager.play(player, scene_data, sequence_id)
 	if typeof(scene_data) ~= "table" then
 		warn("[scene_manager] scene_data harus table")
@@ -352,7 +381,7 @@ function scene_manager.play(player, scene_data, sequence_id)
 				print("[scene_manager] choice_result disimpan:", choice_result.choice_id)
 			end
 		end
-		
+
 		task.wait(0.3)
 	end
 
