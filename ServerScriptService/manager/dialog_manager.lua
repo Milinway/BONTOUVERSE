@@ -1,4 +1,3 @@
--- ServerScriptService > manager(Folder) > dialog_manager(ModuleScript)
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 
@@ -48,7 +47,26 @@ local function find_dialog(dialog_id)
 	return nil
 end
 
-function dialog_manager.play(player, dialog_id)
+local function build_full_dialog(dialog_data, choice_response)
+	-- Clone dialog_data agar tidak memodifikasi original
+	local new_dialog = {
+		dialog_id = dialog_data.dialog_id,
+		mode = dialog_data.mode,
+		background_img = dialog_data.background_img,
+		lines = table.clone(dialog_data.lines),
+	}
+
+	-- Jika ada choice_response, tambahkan ke lines
+	if choice_response then
+		for _, response_line in ipairs(choice_response) do
+			table.insert(new_dialog.lines, response_line)
+		end
+	end
+
+	return new_dialog
+end
+
+function dialog_manager.play(player, dialog_id, choice_response)
 	if not player then
 		return {
 			success = false,
@@ -92,7 +110,10 @@ function dialog_manager.play(player, dialog_id)
 		event = finished_event,
 	}
 
-	game_event:FireClient(player, "dialog_play", dialog_data)
+	-- Build dialog lengkap dengan choice_response jika ada
+	local full_dialog = build_full_dialog(dialog_data, choice_response)
+
+	game_event:FireClient(player, "dialog_play", full_dialog)
 
 	local result = finished_event.Event:Wait()
 
@@ -110,7 +131,7 @@ game_event.OnServerEvent:Connect(function(player, event_name, payload)
 	if event_name ~= "dialog_finished" then
 		return
 	end
-	
+
 	print("[dialog_manager] menerima dialog_finished dari:", player.Name)
 
 	local user_id = player.UserId
@@ -123,7 +144,7 @@ game_event.OnServerEvent:Connect(function(player, event_name, payload)
 	if typeof(payload) ~= "table" then
 		payload = {}
 	end
-	
+
 	print(
 		"[dialog_manager] payload:",
 		payload.dialog_id,

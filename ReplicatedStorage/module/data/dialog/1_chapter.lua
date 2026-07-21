@@ -116,59 +116,56 @@ local dialog = {
 		background_img = nil,
 		lines = {
 			{
-				speaker = "Kiya",
+				speaker = "Windy",
 				character_img = "rbxassetid://KIYA_IMAGE_ID",
-				text = "Mister John, Miss Jane, welcome to Bontang! Hari ini kita akan menyeberang ke surga kecil kami, Pulau Beras Basah.",
+				text = "Mister John, Miss Jane, welcome to Bontang!",
+			},
+			{
+				speaker = "Windy",
+				character_img = "rbxassetid://KIYA_IMAGE_ID",
+				text = "Hari ini kita akan menyeberang ke surga kecil kami, yakni Pulau Beras Basah.",
 			},
 			{
 				speaker = "Mister John",
 				character_img = "rbxassetid://JOHN_IMAGE_ID",
-				text = "Wow, thank you, Kiya! I heard the sand there is as white as rice, is that true?",
-			},
-		},
-		choices = {
-			{
-				choice_id = "answer_a",
-				text = "Yes! That's why it's called Beras Basah (Wet Rice) Island.",
-				is_correct = true,
-			},
-			{
-				choice_id = "answer_b",
-				text = "Not just the sand, Mister! The underwater view and the iconic lighthouse are amazing too!",
-				is_correct = true,
-			},
-		},
-		-- Dialog yang muncul SETELAH player memilih jawaban
-		after_choices = {
-			answer_a = {
-				dialog_id = "after_choice_a",
-				mode = "world_dialog",
-				lines = {
+				text = "Wow, thank you, Windy! I heard the sand there is as white as rice, is that true?",
+				-- Ini adalah choice point - player bisa memilih jawaban
+				choices = {
 					{
-						speaker = "Mister John",
-						character_img = "rbxassetid://JOHN_IMAGE_ID",
-						text = "Oh wow, that sounds amazing!",
+						choice_id = "answer_a",
+						text = "Yes! That's why it's called Beras Basah (Wet Rice) Island.",
+						is_correct = true,
+						-- Response yang ditampilkan SETELAH player memilih choice ini
+						choice_response = {
+							{
+								speaker = "Mister John",
+								character_img = "rbxassetid://JOHN_IMAGE_ID",
+								text = "Oh wow, that sounds amazing!",
+							},
+							{
+								speaker = "Miss Jane",
+								character_img = "rbxassetid://JANE_IMAGE_ID",
+								text = "I really want to see that beautiful island now!",
+							},
+						},
 					},
 					{
-						speaker = "Miss Jane",
-						character_img = "rbxassetid://JANE_IMAGE_ID",
-						text = "I really want to see that beautiful island now!",
-					},
-				},
-			},
-			answer_b = {
-				dialog_id = "after_choice_b",
-				mode = "world_dialog",
-				lines = {
-					{
-						speaker = "Mister John",
-						character_img = "rbxassetid://JOHN_IMAGE_ID",
-						text = "I'd love to see the lighthouse!",
-					},
-					{
-						speaker = "Miss Jane",
-						character_img = "rbxassetid://JANE_IMAGE_ID",
-						text = "That sounds like an incredible experience!",
+						choice_id = "answer_b",
+						text = "Not just the sand, Mister! The underwater view and the iconic lighthouse are amazing too!",
+						is_correct = true,
+						-- Response yang ditampilkan SETELAH player memilih choice ini
+						choice_response = {
+							{
+								speaker = "Mister John",
+								character_img = "rbxassetid://JOHN_IMAGE_ID",
+								text = "I'd love to see the lighthouse!",
+							},
+							{
+								speaker = "Miss Jane",
+								character_img = "rbxassetid://JANE_IMAGE_ID",
+								text = "That sounds like an incredible experience!",
+							},
+						},
 					},
 				},
 			},

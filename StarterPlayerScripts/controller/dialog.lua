@@ -48,6 +48,8 @@ local is_typing = false
 local skip_typing = false
 local typing_token = 0
 
+local selected_choice_id = nil
+
 local function set_button_text(button, text)
 	if button:IsA("TextButton") then
 		button.Text = text
@@ -117,6 +119,15 @@ local function count_graphemes(text)
 	return count
 end
 
+local function get_current_line()
+	if not active_dialog then
+		return nil
+	end
+
+	local lines = active_dialog.lines or {}
+	return lines[current_index]
+end
+
 local function is_current_line_last()
 	if not active_dialog then
 		return false
@@ -151,6 +162,7 @@ local function finish_dialog(choice_id, is_correct)
 	active_dialog = nil
 	is_playing = false
 	current_index = 1
+	selected_choice_id = nil
 end
 
 local function stop_current_voice()
@@ -209,8 +221,11 @@ local function play_typing_text(text, voice_id, voice_volume)
 	is_typing = false
 	skip_typing = false
 
-	if active_dialog and is_current_line_last() and active_dialog.choices then
-		show_choices(active_dialog.choices)
+	-- Cek apakah line saat ini punya choices
+	local current_line = get_current_line()
+	if current_line and current_line.choices then
+		print("[dialog_controller] current_line punya choices, tampil")
+		show_choices(current_line.choices)
 	end
 end
 
@@ -254,6 +269,7 @@ local function start_dialog(dialog_data)
 	active_dialog = dialog_data
 	current_index = 1
 	is_playing = true
+	selected_choice_id = nil
 
 	dialog_gui.Enabled = true
 	main.Visible = true
@@ -292,13 +308,8 @@ next_btn.Activated:Connect(function()
 	local is_last_line = current_index >= #lines
 
 	if is_last_line then
-		if active_dialog.choices then
-			show_choices(active_dialog.choices)
-		else
-			finish_dialog()
-			stop_current_voice()
-		end
-
+		finish_dialog()
+		stop_current_voice()
 		return
 	end
 
@@ -338,7 +349,40 @@ local function choose_answer(button)
 
 	print("[dialog_controller] choice dipilih:", choice_id, is_correct)
 
-	finish_dialog(choice_id, is_correct)
+	-- Simpan choice_id untuk referensi
+	selected_choice_id = choice_id
+
+	-- Get current line yang punya choices
+	local current_line = get_current_line()
+	if not current_line or not current_line.choices then
+		finish_dialog(choice_id, is_correct)
+		return
+	end
+
+	-- Cari choice yang dipilih
+	local selected_choice = nil
+	for _, choice in ipairs(current_line.choices) do
+		if choice.choice_id == choice_id then
+			selected_choice = choice
+			break
+		end
+	end
+
+	if not selected_choice or not selected_choice.choice_response then
+		finish_dialog(choice_id, is_correct)
+		return
+	end
+
+	-- Append choice_response ke active_dialog.lines
+	print("[dialog_controller] menambahkan choice_response ke lines")
+	for _, response_line in ipairs(selected_choice.choice_response) do
+		table.insert(active_dialog.lines, response_line)
+	end
+
+	-- Lanjut ke line berikutnya (choice_response)
+	hide_choices()
+	current_index += 1
+	render_line()
 end
 
 right_btn.Activated:Connect(function()

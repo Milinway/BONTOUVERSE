@@ -28,9 +28,7 @@ if not visual_gui then
 	return
 end
 
-local notification_main = player_gui
-	:WaitForChild("notification")
-	:WaitForChild("main")
+local notification_main = player_gui:WaitForChild("visual"):WaitForChild("packing_souvenir"):waitForChild("notification")
 
 local packing_frame = visual_gui:WaitForChild("packing_souvenir")
 local main = packing_frame:WaitForChild("main")
@@ -47,6 +45,11 @@ local product_frame = main:WaitForChild("product")
 local product_img = product_frame:WaitForChild("img")
 local isi_produk = product_img:WaitForChild("isi_produk")
 
+-- Ambil template stroke dari ReplicatedStorage
+local template_stroke = ReplicatedStorage
+	:WaitForChild("assets")
+	:WaitForChild("template_stroke")
+
 local selected_product = nil
 local current_minigame = nil
 local matched_count = 0
@@ -55,6 +58,7 @@ local finished = false
 
 local product_by_id = {}
 local description_by_id = {}
+local used_descriptions = {} -- Track deskripsi yang sudah dipakai
 
 local function show_notification(message, notification_type)
 	if NotificationService and typeof(NotificationService.Show) == "function" then
@@ -83,6 +87,34 @@ local function clear_generated_descriptions()
 	end
 end
 
+local function remove_stroke_from_all_products()
+	for i = 1, 12 do
+		local slot = isi_produk:FindFirstChild(tostring(i))
+
+		if slot then
+			-- Hapus stroke jika ada
+			local existing_stroke = slot:FindFirstChild("template_stroke")
+			if existing_stroke then
+				existing_stroke:Destroy()
+			end
+		end
+	end
+end
+
+local function add_stroke_to_product(slot)
+	-- Hapus stroke lama jika ada
+		local existing_stroke = slot:FindFirstChild("template_stroke")
+	if existing_stroke then
+		existing_stroke:Destroy()
+	end
+
+	-- Clone dan attach template_stroke
+	local new_stroke = template_stroke:Clone()
+	new_stroke.Parent = slot
+
+	print("[visual_controller] stroke ditambahkan ke:", slot.Name)
+end
+
 local function reset_final_slots()
 	for i = 1, 3 do
 		local slot = final_img:FindFirstChild(tostring(i))
@@ -102,6 +134,12 @@ local function reset_product_slots()
 			slot.Image = ""
 			slot.Visible = false
 			slot:SetAttribute("product_id", nil)
+
+			-- Hapus stroke
+			local existing_stroke = slot:FindFirstChild("template_stroke")
+			if existing_stroke then
+				existing_stroke:Destroy()
+			end
 		end
 	end
 end
@@ -154,15 +192,27 @@ local function select_product(slot)
 		return
 	end
 
+	-- Hapus stroke dari product sebelumnya
+	if selected_product and selected_product.slot then
+		local old_stroke = selected_product.slot:FindFirstChild("template_stroke")
+		if old_stroke then
+			old_stroke:Destroy()
+		end
+	end
+
+	-- Set product baru dengan stroke
 	selected_product = {
 		data = product_data,
 		slot = slot,
 	}
 
+	add_stroke_to_product(slot)
 	sound_service.Play("click")
+
+	print("[visual_controller] produk dipilih:", product_id)
 end
 
-local function resolve_description(description_id)
+local function resolve_description(description_id, description_card)
 	if finished then
 		return
 	end
@@ -178,17 +228,44 @@ local function resolve_description(description_id)
 	if not product_data.is_correct_product then
 		show_notification("Produk yang anda pilih salah!", "error")
 		selected_product = nil
+	
+		-- Hapus stroke
+		local stroke = product_slot:FindFirstChild("template_stroke")
+		if stroke then
+			stroke:Destroy()
+		end
 		return
 	end
 
 	if product_data.description_id ~= description_id then
 		show_notification("Deskripsi yang anda pilih salah!", "error")
 		selected_product = nil
+	
+		-- Hapus stroke
+		local stroke = product_slot:FindFirstChild("template_stroke")
+		if stroke then
+			stroke:Destroy()
+		end
 		return
 	end
 
+	-- Jawaban BENAR - Hide product dari isi_produk
 	product_slot.Visible = false
+
+	-- Hapus stroke
+	local stroke = product_slot:FindFirstChild("template_stroke")
+	if stroke then
+		stroke:Destroy()
+	end
+
+	-- Masukkan ke final
 	put_product_to_final(product_data)
+
+	-- Hapus description card dari deskripsi_list
+	description_card:Destroy()
+
+	-- Mark sebagai used
+	used_descriptions[description_id] = true
 
 	matched_count += 1
 	selected_product = nil
@@ -204,6 +281,7 @@ end
 
 local function render_descriptions(descriptions)
 	clear_generated_descriptions()
+	used_descriptions = {}
 
 	for _, description_data in ipairs(descriptions) do
 		local card = deskripsi_template:Clone()
@@ -226,12 +304,19 @@ local function render_descriptions(descriptions)
 
 		if card:IsA("GuiButton") then
 			card.MouseEnter:Connect(function()
-				sound_service.Play("preview")
+				if not used_descriptions[description_data.description_id] then
+					sound_service.Play("preview")
+				end
 			end)
 
 			card.Activated:Connect(function()
+				if used_descriptions[description_data.description_id] then
+					show_notification("Deskripsi ini sudah dipakai!", "warning")
+					return
+				end
+
 				sound_service.Play("click")
-				resolve_description(description_data.description_id)
+				resolve_description(description_data.description_id, card)
 			end)
 		else
 			warn("[visual_controller] deskripsi_card sebaiknya TextButton/ImageButton agar bisa diklik")
@@ -275,6 +360,7 @@ local function start_packing_souvenir(data)
 	matched_count = 0
 	final_index = 1
 	finished = false
+	used_descriptions = {}
 
 	product_by_id = {}
 	description_by_id = {}

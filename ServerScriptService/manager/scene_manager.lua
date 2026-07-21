@@ -1,4 +1,3 @@
--- ServerScriptService > manager(Folder) > scene_manager(ModuleScript)
 local ServerScriptService = game:GetService("ServerScriptService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
@@ -93,80 +92,14 @@ local function run_step(player, step)
 			return { success = false, stop = true }
 		end
 
-		-- Ambil dialog data untuk akses after_choices
-		local dialog_data = find_dialog_by_id(step.dialog_id)
-
 		-- Return hasil dialog (termasuk choice_id jika ada)
 		if result and result.result then
 			return {
 				success = true,
 				choice_id = result.result.choice_id,
 				is_correct = result.result.is_correct,
-				dialog_data = dialog_data, -- Simpan dialog_data lengkap
 			}
 		end
-
-		return { success = true, dialog_data = dialog_data }
-	end
-
-	if step.action == "after_choice_dialog" then
-		print("[scene_manager] after_choice_dialog")
-
-		-- Cek apakah ada choice_result dari step sebelumnya
-		if not step.choice_result or not step.choice_result.choice_id then
-			print("[scene_manager] tidak ada choice_result, skip after_choice_dialog")
-			return { success = true }
-		end
-
-		local choice_id = step.choice_result.choice_id
-		local dialog_data = step.choice_result.dialog_data
-
-		if not dialog_data then
-			warn("[scene_manager] dialog_data tidak ditemukan")
-			return { success = true }
-		end
-
-		if not dialog_data.after_choices then
-			print("[scene_manager] dialog tidak punya after_choices, skip")
-			return { success = true }
-		end
-
-		local after_choice = dialog_data.after_choices[choice_id]
-
-		if not after_choice then
-			warn("[scene_manager] after_choice untuk " .. choice_id .. " tidak ditemukan")
-			return { success = true }
-		end
-
-		print("[scene_manager] mainkan after_choice dialog:", after_choice.dialog_id)
-
-		local user_id = player.UserId
-		local finished_event = Instance.new("BindableEvent")
-
-		pending_after_choice[user_id] = {
-			dialog_id = after_choice.dialog_id,
-			event = finished_event,
-		}
-
-		-- Siapkan after_choice_data untuk dikirim ke client
-		local after_choice_data = {
-			dialog_id = after_choice.dialog_id,
-			mode = after_choice.mode,
-			background_img = after_choice.background_img,
-			lines = after_choice.lines,
-		}
-
-		-- Kirim langsung ke client
-		print("[scene_manager] kirim after_choice_data ke client")
-		game_event:FireClient(player, "dialog_play", after_choice_data)
-
-		-- BLOCKING: Tunggu sampai dialog selesai
-		print("[scene_manager] menunggu after_choice dialog selesai...")
-		local result = finished_event.Event:Wait()
-		print("[scene_manager] after_choice dialog SELESAI")
-
-		pending_after_choice[user_id] = nil
-		finished_event:Destroy()
 
 		return { success = true }
 	end
@@ -303,34 +236,6 @@ local function run_step(player, step)
 	return { success = true }
 end
 
--- LISTENER: Terima dialog_finished event dari client
-game_event.OnServerEvent:Connect(function(player, event_name, payload)
-	if event_name ~= "dialog_finished" then
-		return
-	end
-
-	local user_id = player.UserId
-
-	-- Cek apakah ini after_choice_dialog yang sedang pending
-	if pending_after_choice[user_id] then
-		local pending = pending_after_choice[user_id]
-
-		if payload and payload.dialog_id == pending.dialog_id then
-			print("[scene_manager] after_choice dialog_finished diterima:", payload.dialog_id)
-			pending.event:Fire()
-			return
-		end
-	end
-end)
-
-Players.PlayerRemoving:Connect(function(player)
-	local user_id = player.UserId
-	if pending_after_choice[user_id] then
-		pending_after_choice[user_id].event:Destroy()
-		pending_after_choice[user_id] = nil
-	end
-end)
-
 function scene_manager.play(player, scene_data, sequence_id)
 	if typeof(scene_data) ~= "table" then
 		warn("[scene_manager] scene_data harus table")
@@ -354,32 +259,12 @@ function scene_manager.play(player, scene_data, sequence_id)
 
 	print("[scene_manager] play sequence:", sequence_id)
 
-	local choice_result = nil
-
 	for step_index, step in ipairs(sequence) do
-		-- Jika step adalah after_choice_dialog, attach choice_result ke step
-		if step.action == "after_choice_dialog" then
-			step.choice_result = choice_result
-		end
-
 		local step_result = run_step(player, step)
 
 		-- Cek apakah ada error yang menyebabkan kita harus stop
 		if step_result and step_result.stop then
 			break
-		end
-
-		-- Jika step adalah dialog, simpan choice_result dan dialog_data untuk digunakan di after_choice_dialog
-		if step.action == "dialog" and step_result then
-			if step_result.choice_id then
-				choice_result = {
-					choice_id = step_result.choice_id,
-					is_correct = step_result.is_correct,
-					dialog_data = step_result.dialog_data,
-				}
-
-				print("[scene_manager] choice_result disimpan:", choice_result.choice_id)
-			end
 		end
 
 		task.wait(0.3)
