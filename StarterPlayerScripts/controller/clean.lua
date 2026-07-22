@@ -46,8 +46,10 @@ local current_minigame = nil
 local is_playing = false
 local items_cleaned = 0
 local total_items = 0
+local countdown_finished = false
 
 local function show_starter_countdown()
+	countdown_finished = false
 	starter_timer.Visible = true
 	starter_timer.Text = "3"
 	sound_service.Play("click")
@@ -66,19 +68,26 @@ local function show_starter_countdown()
 
 	task.wait(0.5)
 	starter_timer.Visible = false
+	countdown_finished = true
+	is_playing = true
 end
 
 local function start_clean_minigame(minigame_data)
 	current_minigame = minigame_data
-	is_playing = true
+	is_playing = false -- Belum bermain, tunggu countdown
 	items_cleaned = 0
 	total_items = minigame_data.total_trash or 0
+	countdown_finished = false
 
 	ingame_gui.Enabled = true
 	minigame_frame.Visible = true
 
-	-- Update item counter
-	item_label.Text = "Sampah: " .. total_items .. "/" .. total_items
+	-- Update item counter - awalnya 0/3 (0 sudah dibersihkan dari 3 total)
+	item_label.Text = "Sampah: " .. items_cleaned .. "/" .. total_items
+
+	-- Reset timer display
+	timer_label.Text = "02:00"
+	timer_label.TextColor3 = Color3.fromRGB(255, 255, 255)
 
 	-- Show countdown
 	task.spawn(show_starter_countdown)
@@ -87,7 +96,7 @@ local function start_clean_minigame(minigame_data)
 end
 
 local function update_timer(time_remaining)
-	if not is_playing or not timer_label then
+	if not countdown_finished or not timer_label then
 		return
 	end
 
@@ -106,7 +115,7 @@ local function update_timer(time_remaining)
 end
 
 local function update_trash_count(remaining)
-	if not is_playing or not item_label then
+	if not countdown_finished or not item_label then
 		return
 	end
 
@@ -160,6 +169,20 @@ game_event.OnClientEvent:Connect(function(event_name, payload)
 	if event_name == "trash_cleaned" then
 		sound_service.Play("click")
 		print("[clean_controller] trash dibersihkan:", payload.trash_name)
+		return
+	end
+	
+	if event_name == "player_unfreeze" then
+		-- Server signal untuk unfreeze (opsional untuk safety)
+		print("[clean_controller] player unfrozen dari server signal")
+		return
+	end
+	
+	if event_name == "clean_minigame_finished_cleanup" then
+		-- Pastikan UI cleanup
+		minigame_frame.Visible = false
+		ingame_gui.Enabled = false
+		print("[clean_controller] UI cleanup selesai")
 		return
 	end
 end)
