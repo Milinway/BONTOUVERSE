@@ -15,6 +15,34 @@ local minigame_manager = {}
 local cache = {}
 local pending = {}
 
+-- Fungsi untuk freeze player (disable movement)
+local function freeze_player(player)
+	local character = player.Character
+	if not character then
+		return
+	end
+
+	local humanoid = character:FindFirstChild("Humanoid")
+	if humanoid then
+		humanoid.WalkSpeed = 0
+		humanoid.JumpHeight = 0
+	end
+end
+
+-- Fungsi untuk unfreeze player (enable movement)
+local function unfreeze_player(player)
+	local character = player.Character
+	if not character then
+		return
+	end
+
+	local humanoid = character:FindFirstChild("Humanoid")
+	if humanoid then
+		humanoid.WalkSpeed = 16 -- Default walk speed
+		humanoid.JumpHeight = 7.2 -- Default jump height
+	end
+end
+
 local function load_module(module_script)
 	if cache[module_script] then
 		return cache[module_script]
@@ -75,12 +103,18 @@ function minigame_manager.start(player, minigame_id)
 		event = finished_event,
 	}
 
+	-- Freeze player saat minigame dimulai
+	freeze_player(player)
+
 	game_event:FireClient(player, "minigame_play", data)
 
 	local result = finished_event.Event:Wait()
 
 	pending[user_id] = nil
 	finished_event:Destroy()
+
+	-- Unfreeze player setelah minigame selesai
+	unfreeze_player(player)
 
 	return result
 end

@@ -129,13 +129,13 @@ local function run_step(player, step)
 	end
 
 	if step.action == "teleport" then
-		print("[scene_manager] teleport:", step.destination_id)
+		print("[scene_manager] teleport:", step.teleport)
 
 		call_manager(
 			teleport_manager,
 			"teleport",
 			player,
-			step.destination_id
+			step.teleport
 		)
 
 		return { success = true }
@@ -255,6 +255,11 @@ function scene_manager.play(player, scene_data, sequence_id)
 	if typeof(sequence) ~= "table" then
 		warn("[scene_manager] sequence tidak ditemukan:", sequence_id)
 		return false
+	end
+
+	-- Set chapter_id di player untuk digunakan oleh teleport_manager
+	if scene_data.chapter_id and teleport_manager then
+		teleport_manager.set_chapter_id(player, scene_data.chapter_id)
 	end
 
 	print("[scene_manager] play sequence:", sequence_id)

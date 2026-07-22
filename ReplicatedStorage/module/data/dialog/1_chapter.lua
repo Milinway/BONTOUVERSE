@@ -133,10 +133,14 @@ local dialog = {
 				choices = {
 					{
 						choice_id = "answer_a",
-						text = "Yes! That's why it's called Beras Basah (Wet Rice) Island.",
 						is_correct = true,
 						-- Response yang ditampilkan SETELAH player memilih choice ini
 						choice_response = {
+							{
+								speaker = "Windy",
+								character_img = "rbxassetid://JOHN_IMAGE_ID",
+								text = "Yes! That's why it's called Beras Basah (Wet Rice) Island",
+							},
 							{
 								speaker = "Mister John",
 								character_img = "rbxassetid://JOHN_IMAGE_ID",
@@ -151,10 +155,14 @@ local dialog = {
 					},
 					{
 						choice_id = "answer_b",
-						text = "Not just the sand, Mister! The underwater view and the iconic lighthouse are amazing too!",
 						is_correct = true,
 						-- Response yang ditampilkan SETELAH player memilih choice ini
 						choice_response = {
+							{
+								speaker = "Windy",
+								character_img = "rbxassetid://JOHN_IMAGE_ID",
+								text = "Not just the sand, Mister! The underwater view and the iconic lighthouse are amazing too!",
+							},
 							{
 								speaker = "Mister John",
 								character_img = "rbxassetid://JOHN_IMAGE_ID",

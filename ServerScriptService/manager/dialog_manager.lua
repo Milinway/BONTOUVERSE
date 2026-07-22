@@ -14,6 +14,34 @@ local dialog_manager = {}
 local dialog_cache = {}
 local pending_dialog = {}
 
+-- Fungsi untuk freeze player (disable movement)
+local function freeze_player(player)
+	local character = player.Character
+	if not character then
+		return
+	end
+
+	local humanoid = character:FindFirstChild("Humanoid")
+	if humanoid then
+		humanoid.WalkSpeed = 0
+		humanoid.JumpHeight = 0
+	end
+end
+
+-- Fungsi untuk unfreeze player (enable movement)
+local function unfreeze_player(player)
+	local character = player.Character
+	if not character then
+		return
+	end
+
+	local humanoid = character:FindFirstChild("Humanoid")
+	if humanoid then
+		humanoid.WalkSpeed = 16 -- Default walk speed
+		humanoid.JumpHeight = 7.2 -- Default jump height
+	end
+end
+
 local function load_dialog_module(module_script)
 	if dialog_cache[module_script] then
 		return dialog_cache[module_script]
@@ -110,6 +138,9 @@ function dialog_manager.play(player, dialog_id, choice_response)
 		event = finished_event,
 	}
 
+	-- Freeze player saat dialog dimulai
+	freeze_player(player)
+
 	-- Build dialog lengkap dengan choice_response jika ada
 	local full_dialog = build_full_dialog(dialog_data, choice_response)
 
@@ -119,6 +150,9 @@ function dialog_manager.play(player, dialog_id, choice_response)
 
 	pending_dialog[user_id] = nil
 	finished_event:Destroy()
+
+	-- Unfreeze player setelah dialog selesai
+	unfreeze_player(player)
 
 	return {
 		success = true,

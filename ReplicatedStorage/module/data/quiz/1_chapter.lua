@@ -1,12 +1,17 @@
 -- ReplicatedStorage > module(Folder) > data(Folder) > quiz(Folder) > 1_chapter(ModuleScript)
+
 local quiz = {
 	ketingting_sentence = {
 		quiz_id = "ketingting_sentence",
-		type = "word_bank",
+		type = "nyusun_kata",
 
-		title = "Duolingo-Style Pop-Up 1",
+		title = "Susun Kata Ketingting",
 
 		question = "Susun kalimat berikut untuk menjelaskan kapal Ketingting kepada Miss Jane!",
+
+		question_hint = "Jelaskan kapal tradisional yang bernama Ketingting kepada Miss Jane dengan menyusun kata-kata berikut.",
+
+		character_img = "rbxassetid://JANE_IMAGE_ID", -- Image character yang bertanya
 
 		word_bank = {
 			"called",
