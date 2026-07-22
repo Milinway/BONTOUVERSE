@@ -71,7 +71,7 @@ local function find_dialog_by_id(dialog_id)
 	return nil
 end
 
-local function run_step(player, step)
+local function run_step(player, step, scene_data)
 	if step.action == "homepage_hide" then
 		game_event:FireClient(player, "homepage_hide")
 		return { success = true }
@@ -103,6 +103,43 @@ local function run_step(player, step)
 
 		return { success = true }
 	end
+
+	-- Dalam run_step function, di bagian minigame action, ubah menjadi:
+
+if step.action == "minigame" then
+	print("[scene_manager] minigame:", step.minigame_id)
+
+	local minigame_type = step.type or "regular"
+	local result = call_manager(
+		minigame_manager,
+		"start",
+		player,
+		step.minigame_id,
+		minigame_type
+	)
+
+	local success = true
+
+	if typeof(result) == "table" and result.success ~= nil then
+		success = result.success == true
+	end
+
+	if success and step.on_success and step.on_success.knowledge then
+		apply_knowledge(
+			player,
+			step.on_success.knowledge,
+			"Minigame berhasil: " .. step.minigame_id
+		)
+	elseif not success and step.on_fail and step.on_fail.knowledge then
+		apply_knowledge(
+			player,
+			step.on_fail.knowledge,
+			"Minigame gagal: " .. step.minigame_id
+		)
+	end
+
+	return { success = true }
+end
 
 	if step.action == "fade" then
 		print("[scene_manager] fade:", step.mode)
@@ -259,13 +296,14 @@ function scene_manager.play(player, scene_data, sequence_id)
 
 	-- Set chapter_id di player untuk digunakan oleh teleport_manager
 	if scene_data.chapter_id and teleport_manager then
+		print("[scene_manager] setting chapter_id:", scene_data.chapter_id)
 		teleport_manager.set_chapter_id(player, scene_data.chapter_id)
 	end
 
 	print("[scene_manager] play sequence:", sequence_id)
 
 	for step_index, step in ipairs(sequence) do
-		local step_result = run_step(player, step)
+		local step_result = run_step(player, step, scene_data)
 
 		-- Cek apakah ada error yang menyebabkan kita harus stop
 		if step_result and step_result.stop then

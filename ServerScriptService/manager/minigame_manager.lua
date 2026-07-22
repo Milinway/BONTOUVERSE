@@ -1,5 +1,6 @@
 -- ServerScriptService > manager(Folder) > minigame_manager(ModuleScript)
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local ServerScriptService = game:GetService("ServerScriptService")
 local Players = game:GetService("Players")
 
 local event_remote = ReplicatedStorage:WaitForChild("event_remote")
@@ -14,6 +15,10 @@ local minigame_manager = {}
 
 local cache = {}
 local pending = {}
+
+-- Load clean_minigame_manager
+local manager_folder = ServerScriptService:WaitForChild("manager")
+local clean_minigame_manager = require(manager_folder:WaitForChild("minigame_manager"):WaitForChild("clean_minigame"))
 
 -- Fungsi untuk freeze player (disable movement)
 local function freeze_player(player)
@@ -75,7 +80,13 @@ local function find_minigame(minigame_id)
 	return nil
 end
 
-function minigame_manager.start(player, minigame_id)
+function minigame_manager.start(player, minigame_id, minigame_type)
+	-- Cek apakah ini clean minigame
+	if minigame_type == "clean" then
+		return clean_minigame_manager.start(player, minigame_id)
+	end
+
+	-- Regular minigame
 	local data = find_minigame(minigame_id)
 
 	if not data then
