@@ -30,7 +30,8 @@ chapter.sequences = {
 		{action = "dialog", dialog_id = "after_minigame3"},
 		{action = "fade", mode = "in", duration = 1},
 		{action = "dialog", dialog_id = "ending_kelas"},
-		{action = "quiz", quiz_id = "final_chapter_quiz", on_succes = {knowledge = 100}}
+		{action = "quiz", quiz_id = "final_chapter_quiz", on_success = {knowledge = 100}},
+		{action = "ending", chapter_id = "chapter_1", chapter_name = "Chapter 1"},
 	},
 }
 

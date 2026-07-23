@@ -1,3 +1,4 @@
+-- ServerScriptService > manager(Folder) > scene_manager(ModuleScript)
 local ServerScriptService = game:GetService("ServerScriptService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
@@ -104,8 +105,6 @@ local function run_step(player, step, scene_data)
 		return { success = true }
 	end
 
-	-- Dalam run_step function, di bagian minigame action, ubah menjadi:
-
 	if step.action == "minigame" then
 		print("[scene_manager] minigame:", step.minigame_id)
 
@@ -199,39 +198,6 @@ local function run_step(player, step, scene_data)
 		return { success = true }
 	end
 
-	if step.action == "minigame" then
-		print("[scene_manager] minigame:", step.minigame_id)
-
-		local result = call_manager(
-			minigame_manager,
-			"start",
-			player,
-			step.minigame_id
-		)
-
-		local success = true
-
-		if typeof(result) == "table" and result.success ~= nil then
-			success = result.success == true
-		end
-
-		if success and step.on_success and step.on_success.knowledge then
-			apply_knowledge(
-				player,
-				step.on_success.knowledge,
-				"Minigame berhasil: " .. step.minigame_id
-			)
-		elseif not success and step.on_fail and step.on_fail.knowledge then
-			apply_knowledge(
-				player,
-				step.on_fail.knowledge,
-				"Minigame gagal: " .. step.minigame_id
-			)
-		end
-
-		return { success = true }
-	end
-
 	if step.action == "quiz" then
 		print("[scene_manager] quiz:", step.quiz_id)
 
@@ -255,6 +221,16 @@ local function run_step(player, step, scene_data)
 				"Quiz berhasil: " .. step.quiz_id
 			)
 		end
+
+		return { success = true }
+	end
+
+	if step.action == "ending" then
+		print("[scene_manager] ending:", step.chapter_id)
+
+		game_event:FireClient(player, "show_ending", {
+			chapter_name = step.chapter_name or "Chapter",
+		})
 
 		return { success = true }
 	end

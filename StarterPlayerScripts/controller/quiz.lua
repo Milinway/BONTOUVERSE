@@ -3,268 +3,250 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 
-local LocalPlayer = Players.LocalPlayer
-local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
-
 local event_remote = ReplicatedStorage:WaitForChild("event_remote")
 local game_event = event_remote:WaitForChild("game_event")
 
-local QuizManager = {}
+local player = Players.LocalPlayer
+local player_gui = player:WaitForChild("PlayerGui")
+
+local quiz_manager = {}
 
 -- State
-local currentQuestionIndex = 1
-local currentData = {}
+local current_question_index = 1
+local current_data = {}
+local current_quiz_id = nil
 local score = 0
 local answering = false
-local quizGui = nil
-local quizId = nil
+local quiz_gui = nil
 
--- Get PlayerGui
-local function getPlayerGui()
-	local player = Players.LocalPlayer
-	return player and player:WaitForChild("PlayerGui") or nil
+-- Helpers
+local function get_quiz_gui()
+	return player_gui:FindFirstChild("ui_Quiz")
 end
 
--- Fade UI
-local function fadeUI(mode, callback, duration)
+local function get_notification_frame()
+	local notification = player_gui:FindFirstChild("notification")
+	if notification then
+		return notification:FindFirstChild("fade")
+	end
+	return nil
+end
+
+local function fade_ui(mode, callback, duration)
 	duration = duration or 0.5
 
-	local playerGui = getPlayerGui()
-	if not playerGui then return end
+	local ui_fade = player_gui:FindFirstChild("notification")
+	if not ui_fade then 
+		if callback then callback() end
+		return 
+	end
 
-	local uiFade = playerGui:FindFirstChild("ui_fade")
-	if not uiFade then return end
+	local fade_frame = ui_fade:FindFirstChild("fade")
+	if not fade_frame then 
+		if callback then callback() end
+		return 
+	end
 
-	local frame = uiFade:FindFirstChild("FadeFrame")
-	if not frame then return end
+	ui_fade.Enabled = true
+	fade_frame.Visible = true
 
-	uiFade.Enabled = true
-	frame.Visible = true
-
-	local tweenInfo = TweenInfo.new(duration, Enum.EasingStyle.Linear)
+	local tween_info = TweenInfo.new(duration, Enum.EasingStyle.Linear)
 	local tween
 
 	if mode == "in" then
-		frame.BackgroundTransparency = 0
-		tween = TweenService:Create(frame, tweenInfo, {BackgroundTransparency = 1})
+		fade_frame.BackgroundTransparency = 0
+		tween = TweenService:Create(fade_frame, tween_info, {BackgroundTransparency = 1})
 	elseif mode == "out" then
-		frame.BackgroundTransparency = 1
-		tween = TweenService:Create(frame, tweenInfo, {BackgroundTransparency = 0})
+		fade_frame.BackgroundTransparency = 1
+		tween = TweenService:Create(fade_frame, tween_info, {BackgroundTransparency = 0})
 	end
 
 	if tween then
 		tween:Play()
 		tween.Completed:Wait()
 		if mode == "in" then
-			uiFade.Enabled = false
-			frame.Visible = false
+			ui_fade.Enabled = false
+			fade_frame.Visible = false
 		end
-		if callback then callback() end
-	else
-		if callback then callback() end
 	end
+
+	if callback then callback() end
 end
 
--- Slide Frame
-local function slideFrame(frame, endPos, duration)
+local function slide_frame(frame, end_pos, duration)
 	if not frame then return end
-	local tweenInfo = TweenInfo.new(duration, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-	local tween = TweenService:Create(frame, tweenInfo, {Position = endPos})
+
+	local tween_info = TweenInfo.new(duration, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	local tween = TweenService:Create(frame, tween_info, {Position = end_pos})
 	tween:Play()
 	tween.Completed:Wait()
 end
 
--- Fade GUI Contents
-local function fadeGuiContents(gui, endTransparency, duration)
-	if not gui then return end
-	local tweenInfo = TweenInfo.new(duration, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-
-	for _, obj in ipairs(gui:GetDescendants()) do
-		if obj:IsA("TextLabel") or obj:IsA("TextButton") then
-			TweenService:Create(obj, tweenInfo, {TextTransparency = endTransparency}):Play()
-		elseif obj:IsA("ImageLabel") or obj:IsA("ImageButton") then
-			TweenService:Create(obj, tweenInfo, {ImageTransparency = endTransparency}):Play()
-		elseif obj:IsA("Frame") then
-			TweenService:Create(obj, tweenInfo, {BackgroundTransparency = endTransparency}):Play()
-		end
-	end
-	task.wait(duration)
-end
-
--- Start Quiz
-function QuizManager:StartQuiz(data, quizIdParam)
-	quizId = quizIdParam or "unknown"
-	currentData = data.Quiz or {}
-	currentQuestionIndex = 1
+-- Main Functions
+function quiz_manager:start(quiz_data, quiz_id)
+	current_data = quiz_data.Quiz or {}
+	current_quiz_id = quiz_id or "unknown"
+	current_question_index = 1
 	score = 0
 	answering = false
 
-	if #currentData == 0 then
-		warn("[quiz] Tidak ada pertanyaan di quizData!")
+	if #current_data == 0 then
+		warn("[quiz] Tidak ada pertanyaan di quiz_data!")
 		return
 	end
 
-	local playerGui = getPlayerGui()
-	if not playerGui then return end
+	quiz_gui = get_quiz_gui()
+	if not quiz_gui then
+		warn("[quiz] ui_Quiz tidak ditemukan di PlayerGui")
+		return
+	end
 
-	quizGui = playerGui:WaitForChild("visual")
-	quizGui.Enabled = true
+	quiz_gui.Enabled = true
 
-	fadeUI("in", function()
-		self:DisplayQuestion(true)
+	-- Delay kecil untuk memastikan UI siap
+	task.wait(0.1)
+
+	fade_ui("in", function()
+		task.wait(0.1) -- Delay tambahan sebelum display question
+		self:display_question(true)
 	end)
 end
 
--- Display Question
-function QuizManager:DisplayQuestion(isFirst)
-	if not currentData or currentQuestionIndex > #currentData then
-		self:EndQuiz()
+function quiz_manager:display_question(is_first)
+	if not current_data or current_question_index > #current_data then
+		self:finish()
 		return
 	end
 
-	local playerGui = getPlayerGui()
-	if not playerGui then return end
+	quiz_gui = get_quiz_gui()
+	if not quiz_gui then return end
 
-	local backFrame = quizGui:FindFirstChild("refleksi")
-	local mainFrame = backFrame and backFrame:FindFirstChild("main")
-	local quizFrame = mainFrame and mainFrame:FindFirstChild("quizFrame")
-	local imageQuiz = mainFrame and mainFrame:FindFirstChild("imageFrame")
+	local back_frame = quiz_gui:FindFirstChild("backFrame")
+	local main_frame = back_frame and back_frame:FindFirstChild("mainFrame")
+	local quiz_frame = main_frame and main_frame:FindFirstChild("quizFrame")
+	local image_frame = main_frame and main_frame:FindFirstChild("imageFrame")
 
-	if not quizFrame or not imageQuiz then return end
+	if not quiz_frame or not image_frame then return end
 
 	answering = false
 
-	quizFrame.A.Visible = true
-	quizFrame.B.Visible = true
+	quiz_frame.A.Visible = true
+	quiz_frame.B.Visible = true
 
-	if not isFirst then
-		slideFrame(mainFrame, UDim2.new(mainFrame.Position.X.Scale, 0, 2.2, 0), 0.4)
+	if not is_first then
+		slide_frame(main_frame, UDim2.new(main_frame.Position.X.Scale, 0, 2.2, 0), 0.4)
 	end
 
-	local questionData = currentData[currentQuestionIndex] or {}
-	quizFrame.quizText.Text = questionData.Question or "Tidak ada pertanyaan"
-	quizFrame.quizHint.Text = questionData.Hint or ""
-	imageQuiz.image.Image = questionData.image or ""
+	local question = current_data[current_question_index] or {}
+	quiz_frame.quizText.Text = question.Question or "Tidak ada pertanyaan"
+	quiz_frame.quizHint.Text = question.Hint or ""
+	image_frame.image.Image = question.image or ""
 
-	quizFrame.A.Text = (questionData.Options and questionData.Options.A) or "Opsi A kosong"
-	quizFrame.B.Text = (questionData.Options and questionData.Options.B) or "Opsi B kosong"
+	quiz_frame.A.Text = (question.Options and question.Options.A) or "Opsi A kosong"
+	quiz_frame.B.Text = (question.Options and question.Options.B) or "Opsi B kosong"
 
-	if not isFirst then
-		slideFrame(mainFrame, UDim2.new(mainFrame.Position.X.Scale, 0, 0.5, 0), 0.4)
+	if not is_first then
+		slide_frame(main_frame, UDim2.new(main_frame.Position.X.Scale, 0, 0.5, 0), 0.4)
 	end
 end
 
--- Select Answer
-function QuizManager:SelectAnswer(option)
+function quiz_manager:select_answer(option)
 	if answering then return end
 	answering = true
 
-	local playerGui = getPlayerGui()
-	if not playerGui then return end
+	quiz_gui = get_quiz_gui()
+	if not quiz_gui then return end
 
-	local mainFrame = quizGui.refleksi.main
-	local quizFrame = mainFrame.quizFrame
-	local quizText = quizFrame.quizText
+	local main_frame = quiz_gui.backFrame.mainFrame
+	local quiz_frame = main_frame.quizFrame
+	local quiz_text = quiz_frame.quizText
 
-	local questionData = currentData[currentQuestionIndex] or {}
-	local correctOption = questionData.CorrectOption
+	local question = current_data[current_question_index] or {}
+	local is_correct = option == question.CorrectOption
 
-	if correctOption and option == correctOption then
+	if is_correct then
 		score += 1
-		quizText.Text = "✅"
-		local sfx = quizFrame:FindFirstChild("Right")
+		quiz_text.Text = "✅"
+		local sfx = quiz_frame:FindFirstChild("Right")
 		if sfx then sfx:Play() end
 	else
-		quizText.Text = "❌"
-		local sfx = quizFrame:FindFirstChild("Wrong")
+		quiz_text.Text = "❌"
+		local sfx = quiz_frame:FindFirstChild("Wrong")
 		if sfx then sfx:Play() end
 	end
 
 	task.wait(0.5)
-	currentQuestionIndex += 1
-	self:DisplayQuestion()
+	current_question_index += 1
+	self:display_question()
 end
 
--- End Quiz
-function QuizManager:EndQuiz()
-	local playerGui = getPlayerGui()
-	if not playerGui then return end
+function quiz_manager:finish()
+	quiz_gui = get_quiz_gui()
+	if not quiz_gui then return end
 
-	local quizFrame = quizGui.refleksi.main.quizFrame
-	local quizText = quizFrame.quizText
-	local totalQuestions = #currentData
+	local quiz_frame = quiz_gui.backFrame.mainFrame.quizFrame
+	local quiz_text = quiz_frame.quizText
+	local total_questions = #current_data
 
-	quizFrame.A.Visible = false
-	quizFrame.B.Visible = false
+	quiz_frame.A.Visible = false
+	quiz_frame.B.Visible = false
 
-	quizText.Text = string.format("Skor %d/%d", score, totalQuestions)
+	quiz_text.Text = string.format("Skor %d/%d", score, total_questions)
 	task.wait(2)
 
-	if score == totalQuestions then
-		fadeUI("out", function()
-			quizGui.Enabled = false
-			local nextScene = currentData[#currentData].NextScene
-			if nextScene then
-				-- Fire event ke server bahwa quiz selesai
-				game_event:FireServer("quiz_finished", {
-					quiz_id = quizId,
-					success = true,
-					score = score,
-					total_questions = totalQuestions,
-				})
-
-				local DialogManager = require(
-					ReplicatedStorage.DialogGame.Handler:WaitForChild("DialogManager")
-				)
-				DialogManager:StartDialog(nextScene, "Chapter1")
-			end
+	if score == total_questions then
+		fade_ui("out", function()
+			task.wait(0.1)
+			quiz_gui.Enabled = false
+			game_event:FireServer("quiz_finished", {
+				quiz_id = current_quiz_id,
+				success = true,
+				score = score,
+				total_questions = total_questions,
+			})
 		end)
 	else
-		-- Quiz gagal, ulangi
-		currentQuestionIndex = 1
+		-- Ulangi quiz
+		current_question_index = 1
 		score = 0
 		answering = false
-		self:DisplayQuestion(false)
+		self:display_question(false)
 	end
 end
 
--- Bind Buttons
-function QuizManager:BindButtons()
-	local playerGui = getPlayerGui()
-	if not playerGui then return end
+function quiz_manager:bind_buttons()
+	quiz_gui = get_quiz_gui()
+	if not quiz_gui then return end
 
-	local quizGui = playerGui:FindFirstChild("visual")
-	if not quizGui then return end
+	local quiz_frame = quiz_gui.backFrame.mainFrame.quizFrame
+	if not quiz_frame then return end
 
-	local quizFrame = quizGui.refleksi.main.quizFrame
-	if not quizFrame then return end
+	local btn_a = quiz_frame:FindFirstChild("A")
+	local btn_b = quiz_frame:FindFirstChild("B")
 
-	local A = quizFrame:FindFirstChild("A")
-	local B = quizFrame:FindFirstChild("B")
-
-	if A then
-		A.MouseButton1Click:Connect(function()
-			self:SelectAnswer("A")
+	if btn_a then
+		btn_a.MouseButton1Click:Connect(function()
+			self:select_answer("A")
 		end)
 	end
-	if B then
-		B.MouseButton1Click:Connect(function()
-			self:SelectAnswer("B")
+
+	if btn_b then
+		btn_b.MouseButton1Click:Connect(function()
+			self:select_answer("B")
 		end)
 	end
 end
 
--- Listen for quiz start event from server
+-- Listen for quiz start event
 game_event.OnClientEvent:Connect(function(event_name, payload)
 	if event_name == "quiz_play" then
-		local quizData = payload
-		-- Extract quiz ID dari data atau gunakan default
-		local paramQuizId = quizData.quiz_id or "quiz_1"
-		QuizManager:StartQuiz(quizData, paramQuizId)
+		local quiz_data = payload
+		local quiz_id = quiz_data.quiz_id or "unknown"
+		quiz_manager:start(quiz_data, quiz_id)
 	end
 end)
 
--- Bind buttons sekali saja saat script load
-QuizManager:BindButtons()
+-- Setup
+quiz_manager:bind_buttons()
 
-return QuizManager
+return quiz_manager
