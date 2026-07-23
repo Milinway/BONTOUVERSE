@@ -45,7 +45,7 @@ local function spawn_trash_items()
 		:FindFirstChild("assets")
 		and ServerStorage:FindFirstChild("assets"):FindFirstChild("minigame")
 		and ServerStorage:FindFirstChild("assets"):FindFirstChild("minigame"):FindFirstChild("clean")
-	
+
 	if not clean_folder then
 		warn("[clean_minigame] clean folder tidak ditemukan di ServerStorage")
 		return {}
@@ -216,9 +216,17 @@ function clean_minigame_manager.start(player, minigame_id)
 
 	-- Unfreeze player SETELAH countdown selesai, jadi player bisa bermain
 	unfreeze_player(player)
-	
+
 	-- Fire event ke client untuk unfreeze signal
 	game_event:FireClient(player, "player_unfreeze")
+
+	-- Cek apakah pending masih ada (keamanan)
+	if not pending[user_id] then
+		return {
+			success = false,
+			message = "minigame dibatalkan",
+		}
+	end
 
 	-- Sekarang set start_time setelah countdown selesai
 	pending[user_id].start_time = tick()
@@ -228,12 +236,17 @@ function clean_minigame_manager.start(player, minigame_id)
 		while pending[user_id] and not pending[user_id].finished do
 			task.wait(1)
 
+			-- Tambahkan cek apakah pending[user_id] masih ada
+			if not pending[user_id] then
+				break
+			end
+
 			local elapsed = tick() - pending[user_id].start_time
 			local remaining_time = pending[user_id].time_limit - elapsed
 
 			if remaining_time <= 0 then
 				-- Waktu habis
-				if pending[user_id].event and not pending[user_id].finished then
+				if pending[user_id] and pending[user_id].event and not pending[user_id].finished then
 					pending[user_id].finished = true
 					pending[user_id].event:Fire({
 						success = pending[user_id].remaining_trash == 0,
@@ -244,9 +257,11 @@ function clean_minigame_manager.start(player, minigame_id)
 			end
 
 			-- Update timer di client
-			game_event:FireClient(player, "clean_minigame_timer_update", {
-				time_remaining = remaining_time,
-			})
+			if pending[user_id] then
+				game_event:FireClient(player, "clean_minigame_timer_update", {
+					time_remaining = remaining_time,
+				})
+			end
 		end
 	end)
 
@@ -257,7 +272,7 @@ function clean_minigame_manager.start(player, minigame_id)
 
 	-- Unfreeze player setelah minigame selesai (safety check)
 	unfreeze_player(player)
-	
+
 	-- Fire event ke client untuk close UI dan unfreeze
 	game_event:FireClient(player, "clean_minigame_finished_cleanup")
 

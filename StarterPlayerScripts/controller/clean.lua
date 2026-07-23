@@ -72,6 +72,22 @@ local function show_starter_countdown()
 	is_playing = true
 end
 
+-- Definisikan finish_clean_minigame SEBELUM fungsi yang memanggilnya
+local function finish_clean_minigame(success)
+	if not current_minigame then
+		return
+	end
+
+	is_playing = false
+	minigame_frame.Visible = false
+	ingame_gui.Enabled = false
+
+	game_event:FireServer("clean_minigame_finished", {
+		minigame_id = current_minigame.minigame_id,
+		success = success,
+	})
+end
+
 local function start_clean_minigame(minigame_data)
 	current_minigame = minigame_data
 	is_playing = false -- Belum bermain, tunggu countdown
@@ -132,21 +148,6 @@ local function update_trash_count(remaining)
 	end
 end
 
-local function finish_clean_minigame(success)
-	if not current_minigame then
-		return
-	end
-
-	is_playing = false
-	minigame_frame.Visible = false
-	ingame_gui.Enabled = false
-
-	game_event:FireServer("clean_minigame_finished", {
-		minigame_id = current_minigame.minigame_id,
-		success = success,
-	})
-end
-
 minigame_frame.Visible = false
 starter_timer.Visible = false
 
@@ -171,13 +172,13 @@ game_event.OnClientEvent:Connect(function(event_name, payload)
 		print("[clean_controller] trash dibersihkan:", payload.trash_name)
 		return
 	end
-	
+
 	if event_name == "player_unfreeze" then
 		-- Server signal untuk unfreeze (opsional untuk safety)
 		print("[clean_controller] player unfrozen dari server signal")
 		return
 	end
-	
+
 	if event_name == "clean_minigame_finished_cleanup" then
 		-- Pastikan UI cleanup
 		minigame_frame.Visible = false
