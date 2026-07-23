@@ -1,4 +1,4 @@
--- ServerScriptService > manager(Folder) > quiz_manager(ModuleScript)
+-- ServerScriptService > manager > quiz_manager(ModuleScript)
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 
@@ -85,6 +85,44 @@ function quiz_manager.start(player, quiz_id)
 	return result
 end
 
+-- Fungsi untuk handle answer dari client
+function quiz_manager.check_answer(player, quiz_id, question_index, selected_option)
+	local user_id = player.UserId
+	local current = pending[user_id]
+
+	if not current then
+		return {
+			success = false,
+			message = "quiz session tidak ditemukan",
+		}
+	end
+
+	local data = find_quiz(quiz_id)
+	if not data then
+		return {
+			success = false,
+			message = "quiz tidak ditemukan",
+		}
+	end
+
+	-- Validasi question index
+	if not data.Quiz or not data.Quiz[question_index] then
+		return {
+			success = false,
+			message = "pertanyaan tidak ditemukan",
+		}
+	end
+
+	local question_data = data.Quiz[question_index]
+	local is_correct = selected_option == question_data.CorrectOption
+
+	return {
+		success = true,
+		is_correct = is_correct,
+		correct_option = question_data.CorrectOption,
+	}
+end
+
 game_event.OnServerEvent:Connect(function(player, event_name, payload)
 	if event_name ~= "quiz_finished" then
 		return
@@ -106,10 +144,15 @@ game_event.OnServerEvent:Connect(function(player, event_name, payload)
 		return
 	end
 
-	current.event:Fire({
-		success = payload.success == true,
-		quiz_id = current.quiz_id,
-	})
+	if current.event and not current.finished then
+		current.finished = true
+		current.event:Fire({
+			success = payload.success == true,
+			score = payload.score,
+			total_questions = payload.total_questions,
+			quiz_id = current.quiz_id,
+		})
+	end
 end)
 
 Players.PlayerRemoving:Connect(function(player)
@@ -117,10 +160,13 @@ Players.PlayerRemoving:Connect(function(player)
 	local current = pending[user_id]
 
 	if current then
-		current.event:Fire({
-			success = false,
-			cancelled = true,
-		})
+		if current.event and not current.finished then
+			current.finished = true
+			current.event:Fire({
+				success = false,
+				cancelled = true,
+			})
+		end
 
 		pending[user_id] = nil
 	end

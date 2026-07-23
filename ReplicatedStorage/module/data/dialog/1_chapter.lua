@@ -243,6 +243,29 @@ local dialog = {
 			},
 		},
 	},
+	
+	after_minigame3 = {
+		dialog_id = "after_minigame3",
+		mode = "story_image",
+		background_img = "rbxassetid://PULAU_BERAS_BASAH_IMAGE_ID",
+		lines = {
+			{
+				speaker = "Miss Jane",
+				character_img = "rbxassetid://JANE_IMAGE_ID",
+				text = "You guys are local heroes! The island looks so clean and pristine now!...",
+			},
+			{
+				speaker = "Kiya",
+				character_img = "rbxassetid://KIYA_IMAGE_ID",
+				text = "Ya benar, ini berkat kepedulian kita terhadap lingkungan sekitar!",
+			},
+			{
+				speaker = "Miss Jane",
+				character_img = "rbxassetid://JANE_IMAGE_ID",
+				text = "Betul, betul, betul",
+			},
+		},
+	},
 
 	ending_kelas = {
 		dialog_id = "ending_kelas",

@@ -63,14 +63,23 @@ local function spawn_trash_items()
 	end
 
 	local spawned_trash = {}
+	local trash_index = 0
 
 	for _, trash_part in ipairs(clean_folder:GetChildren()) do
 		if trash_part:IsA("Model") or trash_part:IsA("BasePart") then
 			local cloned_trash = trash_part:Clone()
+			
+			-- Ganti nama menjadi "trash" dengan ID
+			trash_index = trash_index + 1
+			cloned_trash.Name = "trash"
+			
 			cloned_trash.Parent = workspace_trash_folder
-			table.insert(spawned_trash, cloned_trash)
+			table.insert(spawned_trash, {
+				object = cloned_trash,
+				id = trash_index
+			})
 
-			print("[clean_minigame] trash spawned:", cloned_trash.Name)
+			print("[clean_minigame] trash spawned:", "trash #"..trash_index)
 		end
 	end
 
@@ -81,7 +90,10 @@ end
 local function setup_trash_items(player, trash_list)
 	local user_id = player.UserId
 
-	for _, trash_part in ipairs(trash_list) do
+	for _, trash_data in ipairs(trash_list) do
+		local trash_part = trash_data.object
+		local trash_id = trash_data.id
+		
 		-- Cari primary part atau gunakan part itu sendiri
 		local interact_part = trash_part
 		if trash_part:IsA("Model") then
@@ -89,7 +101,7 @@ local function setup_trash_items(player, trash_list)
 		end
 
 		if not interact_part then
-			warn("[clean_minigame] tidak bisa menemukan BasePart di:", trash_part.Name)
+			warn("[clean_minigame] tidak bisa menemukan BasePart di trash #"..trash_id)
 			continue
 		end
 
@@ -103,7 +115,7 @@ local function setup_trash_items(player, trash_list)
 		prompt.ActionText = "Bersihkan"
 		prompt.ObjectText = "Sampah"
 
-		-- Handle prompt interaction - gunakan closure untuk capture trash_part
+		-- Handle prompt interaction - gunakan closure untuk capture trash_id
 		local function on_trash_triggered(player_who_triggered)
 			if player_who_triggered.UserId ~= user_id then
 				return
@@ -114,18 +126,17 @@ local function setup_trash_items(player, trash_list)
 			end
 
 			-- Cek apakah trash ini sudah dibersihkan
-			local trash_name = trash_part.Name
-			if pending[user_id].cleaned_trash[trash_name] then
+			if pending[user_id].cleaned_trash[trash_id] then
 				return -- Sudah dibersihkan, skip
 			end
 
 			-- Tandai sebagai sudah dibersihkan
-			pending[user_id].cleaned_trash[trash_name] = true
+			pending[user_id].cleaned_trash[trash_id] = true
 			pending[user_id].remaining_trash = pending[user_id].remaining_trash - 1
 
 			-- Fire event ke client untuk animasi/feedback
 			game_event:FireClient(player_who_triggered, "trash_cleaned", {
-				trash_name = trash_name,
+				trash_id = trash_id,
 			})
 
 			-- Fire event untuk update UI counter
@@ -133,12 +144,12 @@ local function setup_trash_items(player, trash_list)
 				remaining = pending[user_id].remaining_trash,
 			})
 
-			print("[clean_minigame] trash dibersihkan:", trash_name, "sisa:", pending[user_id].remaining_trash)
+			print("[clean_minigame] trash #"..trash_id.." dibersihkan, sisa:", pending[user_id].remaining_trash)
 
 			-- Destroy trash dari workspace setelah diambil
 			task.wait(0.1) -- Delay kecil agar animasi client sempat render
 			trash_part:Destroy()
-			print("[clean_minigame] trash destroyed dari workspace:", trash_name)
+			print("[clean_minigame] trash #"..trash_id.." destroyed dari workspace")
 
 			-- Cek apakah semua trash sudah dibersihkan
 			if pending[user_id].remaining_trash <= 0 then

@@ -106,40 +106,40 @@ local function run_step(player, step, scene_data)
 
 	-- Dalam run_step function, di bagian minigame action, ubah menjadi:
 
-if step.action == "minigame" then
-	print("[scene_manager] minigame:", step.minigame_id)
+	if step.action == "minigame" then
+		print("[scene_manager] minigame:", step.minigame_id)
 
-	local minigame_type = step.type or "regular"
-	local result = call_manager(
-		minigame_manager,
-		"start",
-		player,
-		step.minigame_id,
-		minigame_type
-	)
-
-	local success = true
-
-	if typeof(result) == "table" and result.success ~= nil then
-		success = result.success == true
-	end
-
-	if success and step.on_success and step.on_success.knowledge then
-		apply_knowledge(
+		local minigame_type = step.type or "regular"
+		local result = call_manager(
+			minigame_manager,
+			"start",
 			player,
-			step.on_success.knowledge,
-			"Minigame berhasil: " .. step.minigame_id
+			step.minigame_id,
+			minigame_type
 		)
-	elseif not success and step.on_fail and step.on_fail.knowledge then
-		apply_knowledge(
-			player,
-			step.on_fail.knowledge,
-			"Minigame gagal: " .. step.minigame_id
-		)
-	end
 
-	return { success = true }
-end
+		local success = true
+
+		if typeof(result) == "table" and result.success ~= nil then
+			success = result.success == true
+		end
+
+		if success and step.on_success and step.on_success.knowledge then
+			apply_knowledge(
+				player,
+				step.on_success.knowledge,
+				"Minigame berhasil: " .. step.minigame_id
+			)
+		elseif not success and step.on_fail and step.on_fail.knowledge then
+			apply_knowledge(
+				player,
+				step.on_fail.knowledge,
+				"Minigame gagal: " .. step.minigame_id
+			)
+		end
+
+		return { success = true }
+	end
 
 	if step.action == "fade" then
 		print("[scene_manager] fade:", step.mode)

@@ -10,7 +10,7 @@ local quiz = {
 		question = "Susun kalimat berikut untuk menjelaskan kapal Ketingting kepada Miss Jane!",
 
 		question_hint = "Jelaskan kapal tradisional yang bernama Ketingting kepada Miss Jane dengan menyusun kata-kata berikut.",
-
+		character_name = "Jane",
 		character_img = "rbxassetid://JANE_IMAGE_ID", -- Image character yang bertanya
 
 		word_bank = {
@@ -38,28 +38,22 @@ local quiz = {
 
 	final_chapter_quiz = {
 		quiz_id = "final_chapter_quiz",
-		type = "multiple_choice",
-
-		title = "Kuis Penutup Bab",
-
-		question = "Apa saja nilai jual ekonomi dan pariwisata di Pulau Beras Basah berdasarkan cerita Kiya?",
-
-		choices = {
+		Quiz = {
 			{
-				choice_id = "option_1",
-				text = "Pasir putih, Mercusuar ikonik, serta produk UMKM lokal seperti Amplang & Batik Kuntul Perak.",
-				is_correct = true,
-			},
+				Question = "Apa saja nilai jual ekonomi dan pariwisata di Pulau Beras Basah berdasarkan cerita Kiya?",
+				Hint = "",
+				image = "",
+				Options = {
+					A = "Pasir putih, Mercusuar ikonik, serta produk UMKM lokal seperti Amplang & Batik Kuntul Perak.",
+					B = "Mal perbelanjaan mewah di tengah pulau dan wahana permainan modern.",
+				},
+				CorrectOption = "A",
 
-			{
-				choice_id = "option_2",
-				text = "Mal perbelanjaan mewah di tengah pulau dan wahana permainan modern.",
-				is_correct = false,
+				success_knowledge = 100,
 			},
 		},
-
-		success_knowledge = 100,
-	},
+		NextScene = "next_scene_name", -- Ganti dengan scene berikutnya
+	}
 }
 
 return quiz
