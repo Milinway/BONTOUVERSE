@@ -21,29 +21,29 @@ end
 
 local function fade_label_in_out(label, chapter_name, duration)
 	if not label then return end
-	
+
 	duration = duration or 1
-	
+
 	-- Set initial state
 	label.Text = "Ending " .. chapter_name
 	label.TextTransparency = 1
 	label.Visible = true
-	
+
 	-- Fade in
 	local tween_info_in = TweenInfo.new(duration * 0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut)
 	local tween_in = TweenService:Create(label, tween_info_in, {TextTransparency = 0})
 	tween_in:Play()
 	tween_in.Completed:Wait()
-	
+
 	-- Wait di tengah
 	task.wait(2)
-	
+
 	-- Fade out
 	local tween_info_out = TweenInfo.new(duration * 0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut)
 	local tween_out = TweenService:Create(label, tween_info_out, {TextTransparency = 1})
 	tween_out:Play()
 	tween_out.Completed:Wait()
-	
+
 	label.Visible = false
 end
 
@@ -53,14 +53,14 @@ local function show_ending(chapter_name)
 		warn("[ending] notification/fade frame tidak ditemukan")
 		return
 	end
-	
+
 	local notification = fade_frame.Parent
 	if not notification then return end
-	
+
 	-- Enable notification
 	notification.Enabled = true
 	fade_frame.Visible = true
-	
+
 	-- Cari atau buat ending_lbl
 	local ending_lbl = fade_frame:FindFirstChild("ending_lbl")
 	if not ending_lbl then
@@ -74,14 +74,14 @@ local function show_ending(chapter_name)
 		ending_lbl.Font = Enum.Font.GothamBold
 		ending_lbl.TextColor3 = Color3.fromRGB(255, 255, 255)
 	end
-	
+
 	-- Fade in/out ending text
 	fade_label_in_out(ending_lbl, chapter_name, 1)
-	
+
 	-- Disable notification setelah selesai
 	notification.Enabled = false
 	fade_frame.Visible = false
-	
+
 	-- Fire event ke homepage untuk kembali
 	game_event:FireServer("ending_completed", {
 		chapter_name = chapter_name,

@@ -21,7 +21,7 @@ local quiz_gui = nil
 
 -- Helpers
 local function get_quiz_gui()
-	return player_gui:FindFirstChild("ui_Quiz")
+	return player_gui:FindFirstChild("visual")
 end
 
 local function get_notification_frame()
@@ -121,8 +121,8 @@ function quiz_manager:display_question(is_first)
 	quiz_gui = get_quiz_gui()
 	if not quiz_gui then return end
 
-	local back_frame = quiz_gui:FindFirstChild("backFrame")
-	local main_frame = back_frame and back_frame:FindFirstChild("mainFrame")
+	local back_frame = quiz_gui:FindFirstChild("refleksi")
+	local main_frame = back_frame and back_frame:FindFirstChild("main")
 	local quiz_frame = main_frame and main_frame:FindFirstChild("quizFrame")
 	local image_frame = main_frame and main_frame:FindFirstChild("imageFrame")
 
@@ -184,7 +184,7 @@ function quiz_manager:finish()
 	quiz_gui = get_quiz_gui()
 	if not quiz_gui then return end
 
-	local quiz_frame = quiz_gui.backFrame.mainFrame.quizFrame
+	local quiz_frame = quiz_gui.refleksi.main.quizFrame
 	local quiz_text = quiz_frame.quizText
 	local total_questions = #current_data
 
@@ -218,7 +218,7 @@ function quiz_manager:bind_buttons()
 	quiz_gui = get_quiz_gui()
 	if not quiz_gui then return end
 
-	local quiz_frame = quiz_gui.backFrame.mainFrame.quizFrame
+	local quiz_frame = quiz_gui.refleksi.main.quizFrame
 	if not quiz_frame then return end
 
 	local btn_a = quiz_frame:FindFirstChild("A")
