@@ -73,6 +73,7 @@ local function show_ending(chapter_name)
 		ending_lbl.TextScaled = true
 		ending_lbl.Font = Enum.Font.GothamBold
 		ending_lbl.TextColor3 = Color3.fromRGB(255, 255, 255)
+		ending_lbl.ZIndex = 10
 	end
 
 	-- Fade in/out ending text
@@ -82,10 +83,30 @@ local function show_ending(chapter_name)
 	notification.Enabled = false
 	fade_frame.Visible = false
 
-	-- Fire event ke homepage untuk kembali
-	game_event:FireServer("ending_completed", {
-		chapter_name = chapter_name,
-	})
+	-- Wait sebentar sebelum fade out ke homepage
+	task.wait(0.5)
+
+	-- Fade out ke homepage
+	local ui_fade = player_gui:FindFirstChild("notification")
+	if ui_fade then
+		local fade_frame_main = ui_fade:FindFirstChild("fade")
+		if fade_frame_main then
+			ui_fade.Enabled = true
+			fade_frame_main.Visible = true
+
+			local tween_info = TweenInfo.new(1.5, Enum.EasingStyle.Linear)
+			local tween = TweenService:Create(fade_frame_main, tween_info, {BackgroundTransparency = 0})
+			tween:Play()
+			tween.Completed:Wait()
+
+			-- Fire event ke server untuk kembali ke homepage
+			game_event:FireServer("ending_completed", {
+				chapter_name = chapter_name,
+			})
+
+			task.wait(1)
+		end
+	end
 end
 
 -- Listen for ending event dari server

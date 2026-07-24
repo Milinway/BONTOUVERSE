@@ -292,4 +292,14 @@ function scene_manager.play(player, scene_data, sequence_id)
 	return true
 end
 
+-- Listen untuk ending_completed dari client
+game_event.OnServerEvent:Connect(function(player, event_name, payload)
+	if event_name == "ending_completed" then
+		print("[scene_manager] ending completed untuk player:", player.Name)
+		
+		-- Fire event ke client untuk show homepage
+		game_event:FireClient(player, "show_homepage")
+	end
+end)
+
 return scene_manager
