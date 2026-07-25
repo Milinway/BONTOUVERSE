@@ -1,4 +1,4 @@
--- StarterPlayerScripts > controller(Folder) > fade(LocalScript)
+-- StarterPlayerScripts > controller(Folder) > system(Folder) > fade(LocalScript)
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")

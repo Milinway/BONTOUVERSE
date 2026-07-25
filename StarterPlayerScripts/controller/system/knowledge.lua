@@ -1,4 +1,4 @@
--- StarterPlayerScripts > controller(Folder) > ingame(LocalScript)
+-- StarterPlayerScripts > controller(Folder) > system(Folder) > ingame(LocalScript)
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")

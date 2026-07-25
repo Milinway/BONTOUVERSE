@@ -1,6 +1,4 @@
--- StarterPlayerScripts > controller(Folder) > homepage(LocalScript)
--- require (chapter_card(ModuleScript), catalog(ModuleScript), chapter_manager(ModuleScript), homepage(LocalScript), main_server(Scriot))
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
+-- StarterPlayerScripts > controller(Folder) > system(Folder) > homepage(LocalScript)
 local Players = game:GetService("Players")
 
 local player = Players.LocalPlayer

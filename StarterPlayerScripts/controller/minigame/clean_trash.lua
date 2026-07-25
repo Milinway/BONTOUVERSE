@@ -1,4 +1,4 @@
--- StarterPlayerScripts > controller(Folder) > clean(LocalScript)
+-- StarterPlayerScripts > controller(Folder) > minigame(Folder)> clean_trash(LocalScript)
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")

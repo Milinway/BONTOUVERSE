@@ -1,3 +1,4 @@
+-- StarterPlayerScripts > controller(Folder) > minigame(Folder) > nyusun_kata(LocalScript)
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 

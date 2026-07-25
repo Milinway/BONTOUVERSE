@@ -1,4 +1,4 @@
--- StarterPlayerScripts > controller(Folder) > quiz(LocalScript)
+-- StarterPlayerScripts > controller(Folder) > minigame(Folder) > quiz(LocalScript)
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")

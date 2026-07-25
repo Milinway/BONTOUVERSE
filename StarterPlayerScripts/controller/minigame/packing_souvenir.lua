@@ -1,4 +1,4 @@
--- StarterPlayerScripts > controller(Folder) > visual_packing_souvenir(LocalScript)
+-- StarterPlayerScripts > controller(Folder) > minigame(Folder) > visual_packing_souvenir(LocalScript)
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 
