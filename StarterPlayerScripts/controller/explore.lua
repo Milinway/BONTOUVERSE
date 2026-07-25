@@ -1,4 +1,4 @@
--- StarterPlayer > StarterCharacterScripts > controller(Folder) > explore(LocalScript)
+-- StarterPlayerScripts > controller(Folder) > explore(LocalScript)
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -15,7 +15,7 @@ local explore_manager = {}
 local is_exploring = false
 local explore_id = nil
 local remaining_time = 0
-local timer_thread = nil
+local timer_running = false
 
 -- Helpers
 local function get_minigame_ui()
@@ -65,31 +65,32 @@ local function update_timer_display(time_left)
 end
 
 local function start_timer(duration)
-	if timer_thread then
-		task.cancel(timer_thread)
-	end
+	-- Stop previous timer
+	timer_running = false
+	task.wait(0.1) -- Wait untuk cleanup
 	
 	remaining_time = duration
+	timer_running = true
 	
-	timer_thread = task.spawn(function()
-		while is_exploring and remaining_time > 0 do
-			update_timer_display(remaining_time)
-			task.wait(1)
-			remaining_time -= 1
-		end
-		
-		if is_exploring then
-			update_timer_display(0)
-		end
-	end)
+	-- Use coroutine instead of task.spawn untuk better control
+	while timer_running and remaining_time > 0 do
+		update_timer_display(remaining_time)
+		task.wait(1)
+		remaining_time -= 1
+	end
+	
+	-- Timer habis - display 00:00 dan finish
+	if timer_running and is_exploring then
+		update_timer_display(0)
+		task.wait(0.5)
+		explore_manager:finish()
+	end
+	
+	timer_running = false
 end
 
 local function stop_timer()
-	is_exploring = false
-	if timer_thread then
-		task.cancel(timer_thread)
-		timer_thread = nil
-	end
+	timer_running = false
 end
 
 -- Main Functions
@@ -116,13 +117,19 @@ function explore_manager:start(data)
 		hint_label.TextColor3 = Color3.fromRGB(255, 255, 255)
 	end
 	
-	-- Start timer
-	start_timer(duration)
+	-- Start timer in a separate thread
+	task.spawn(function()
+		start_timer(duration)
+	end)
 	
 	print("[explore] Explore started: " .. explore_id .. " - Duration: " .. duration .. "s")
 end
 
 function explore_manager:finish()
+	-- Prevent double-finish
+	if not is_exploring then return end
+	
+	is_exploring = false
 	stop_timer()
 	
 	local minigame_ui = get_minigame_ui()
@@ -149,10 +156,6 @@ game_event.OnClientEvent:Connect(function(event_name, payload)
 		explore_manager:start(payload)
 	end
 end)
-
--- Optional: Listener untuk end explore dengan button atau kondisi tertentu
--- User bisa membuat button di UI untuk "Selesai Menjelajah"
--- atau bisa juga di-trigger otomatis saat timer habis
 
 -- Listen untuk key press (misalnya E untuk selesai)
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
