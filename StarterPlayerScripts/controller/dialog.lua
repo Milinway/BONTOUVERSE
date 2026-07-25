@@ -50,6 +50,21 @@ local typing_token = 0
 
 local selected_choice_id = nil
 
+local skip_cooldown = 5
+local max_skip_spam = 5
+local skip_spam_count = 0
+local skip_locked = false
+local skip_unlock_token = 0
+
+-- Jarak waktu maksimum antar skip supaya masih dihitung "beruntun".
+-- Kalau lewat skip_streak_timeout detik tanpa ada skip baru,
+-- skip_spam_count otomatis balik ke 0.
+local skip_streak_timeout = 3
+local skip_streak_token = 0
+
+local IMAGE_SKIP = "rbxassetid://118183992128466"
+local IMAGE_NEXT = "rbxassetid://133433507076361"
+
 local function set_button_text(button, text)
 	if button:IsA("TextButton") then
 		button.Text = text
@@ -76,11 +91,18 @@ local function set_image(image_object, image_id)
 	end
 end
 
+-- Forward declaration. hide_choices() di bawah ini butuh
+-- update_next_button_state() padahal isinya baru diisi lebih jauh ke
+-- bawah. Dengan local di sini, assignment "update_next_button_state =
+-- function() ... end" nanti mengisi local ini, bukan bikin global baru.
+local update_next_button_state
+
 local function hide_choices()
 	help_btn.Visible = false
 	right_btn.Visible = false
 	wrong_btn.Visible = false
-	next_btn.Visible = true
+
+	update_next_button_state()
 end
 
 local function show_choices(choices)
@@ -138,6 +160,49 @@ local function is_current_line_last()
 	return current_index >= #lines
 end
 
+update_next_button_state = function()
+	if is_typing then
+		next_btn.Image = IMAGE_SKIP
+	else
+		next_btn.Image = IMAGE_NEXT
+	end
+
+	if skip_locked and is_typing then
+		next_btn.Visible = false
+	else
+		next_btn.Visible = true
+	end
+end
+
+local function lock_skip()
+	if skip_locked then
+		return
+	end
+
+	skip_locked = true
+	skip_unlock_token += 1
+
+	local token = skip_unlock_token
+
+	next_btn.Visible = false
+
+	task.delay(skip_cooldown,function()
+
+		if token ~= skip_unlock_token then
+			return
+		end
+
+		skip_locked = false
+		skip_spam_count = 0
+
+		if is_playing and is_typing then
+			next_btn.Visible = true
+			update_next_button_state()
+		end
+
+	end)
+end
+
 local function finish_dialog(choice_id, is_correct)
 	if not active_dialog then
 		return
@@ -163,6 +228,14 @@ local function finish_dialog(choice_id, is_correct)
 	is_playing = false
 	current_index = 1
 	selected_choice_id = nil
+
+	-- Reset status skip di sini supaya SEMUA jalur yang berakhir lewat
+	-- finish_dialog() (line habis, next di line terakhir, atau jawab
+	-- pilihan) otomatis ikut ke-reset tanpa perlu diulang di tiap tempat.
+	skip_spam_count = 0
+	skip_locked = false
+	skip_unlock_token += 1
+	skip_streak_token += 1
 end
 
 local function stop_current_voice()
@@ -180,6 +253,7 @@ local function play_typing_text(text, voice_id, voice_volume)
 	is_typing = true
 	skip_typing = false
 
+	update_next_button_state()
 	stop_current_voice()
 
 	local has_voice = voice_id ~= nil and voice_id ~= ""
@@ -221,6 +295,8 @@ local function play_typing_text(text, voice_id, voice_volume)
 	is_typing = false
 	skip_typing = false
 
+	update_next_button_state()
+
 	-- Cek apakah line saat ini punya choices
 	local current_line = get_current_line()
 	if current_line and current_line.choices then
@@ -238,6 +314,8 @@ local function render_line()
 	local line = lines[current_index]
 
 	if not line then
+		-- finish_dialog() sudah menghandle reset skip_spam_count,
+		-- skip_locked, dkk, jadi tidak perlu diulang di sini.
 		finish_dialog()
 		stop_current_voice()
 		return
@@ -271,6 +349,13 @@ local function start_dialog(dialog_data)
 	is_playing = true
 	selected_choice_id = nil
 
+	-- Reset status skip supaya lock/cooldown dari dialog sebelumnya
+	-- tidak ikut terbawa ke dialog baru ini.
+	skip_spam_count = 0
+	skip_locked = false
+	skip_unlock_token += 1
+	skip_streak_token += 1
+
 	dialog_gui.Enabled = true
 	main.Visible = true
 	dialoge_frame.Visible = true
@@ -298,9 +383,39 @@ next_btn.Activated:Connect(function()
 	sound_service.Play("click")
 
 	if is_typing then
+		if skip_locked then
+			return
+		end
+
+		skip_spam_count += 1
+
+		-- Hitung mundur "beruntun": kalau tidak ada skip baru dalam
+		-- skip_streak_timeout detik, skip_spam_count balik ke 0.
+		-- Jadi yang kena lock cuma skip yang beneran spam beruntun,
+		-- bukan pola skip-next-skip-next yang jaraknya renggang.
+		skip_streak_token += 1
+		local streak_token = skip_streak_token
+
+		task.delay(skip_streak_timeout, function()
+			if streak_token ~= skip_streak_token then
+				return
+			end
+
+			skip_spam_count = 0
+		end)
+
+		if skip_spam_count >= max_skip_spam then
+			lock_skip()
+		end
+
 		skip_typing = true
+
 		stop_current_voice()
+
 		dialoge_lbl.MaxVisibleGraphemes = -1
+
+		update_next_button_state()
+
 		return
 	end
 
@@ -308,6 +423,7 @@ next_btn.Activated:Connect(function()
 	local is_last_line = current_index >= #lines
 
 	if is_last_line then
+		-- finish_dialog() sudah reset skip_spam_count, skip_locked, dkk.
 		finish_dialog()
 		stop_current_voice()
 		return
@@ -379,7 +495,6 @@ local function choose_answer(button)
 		table.insert(active_dialog.lines, response_line)
 	end
 
-	-- Lanjut ke line berikutnya (choice_response)
 	hide_choices()
 	current_index += 1
 	render_line()

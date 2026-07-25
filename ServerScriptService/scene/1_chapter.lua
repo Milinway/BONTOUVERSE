@@ -14,6 +14,7 @@ chapter.sequences = {
 		{action = "fade", mode = "in", duration = 1},
 		{action = "checkpoint", checkpoint_id = "flashback_start"},
 		{action = "dialog", dialog_id = "dermaga_welcome"},
+		{action = "explore", explore_id = "pulau_beras_basah_explore", duration = 180, hint = "Jelajahi Pulau Beras Basah"},
 		{action = "knowledge_set", value = 37, reason = "Player berhasil menjawab penyambutan turis di dermaga"},
 		{action = "fade", mode = "out", duration = 2},
 		{action = "minigame", minigame_id = "packing_local_souvenirs", on_success = {knowledge = 51},},

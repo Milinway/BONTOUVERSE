@@ -118,7 +118,7 @@ local dialog = {
 			{
 				speaker = "Windy",
 				character_img = "rbxassetid://KIYA_IMAGE_ID",
-				text = "Mister John, Miss Jane, welcome to Bontang!",
+				text = "Hi Mister John, Miss Jane, welcome to Bontang!",
 			},
 			{
 				speaker = "Windy",

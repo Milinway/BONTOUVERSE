@@ -48,6 +48,7 @@ function chapter_manager.get_menu_data(player)
 			title = chapter_data.title,
 			subtitle = chapter_data.subtitle,
 			image = chapter_data.image,
+			baground = chapter_data.baground,
 
 			status = status,
 			is_unlocked = is_unlocked,

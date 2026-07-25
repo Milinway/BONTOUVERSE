@@ -9,6 +9,7 @@ local game_event = event_remote:WaitForChild("game_event")
 local scene_manager = {}
 
 local pending_after_choice = {}
+local pending_explore = {}
 
 local function optional_require(module_script)
 	local success, result = pcall(function()
@@ -48,6 +49,19 @@ local function apply_knowledge(player, value, reason)
 		knowledge_manager.set(player, value, reason)
 	else
 		warn("[scene_manager] knowledge_manager.set belum siap")
+	end
+end
+
+local function unfreeze_player(player)
+	local character = player.Character
+	if not character then
+		return
+	end
+
+	local humanoid = character:FindFirstChild("Humanoid")
+	if humanoid then
+		humanoid.WalkSpeed = 16
+		humanoid.JumpHeight = 7.2
 	end
 end
 
@@ -235,6 +249,47 @@ local function run_step(player, step, scene_data)
 		return { success = true }
 	end
 
+	if step.action == "explore" then
+		print("[scene_manager] explore:", step.explore_id)
+
+		local user_id = player.UserId
+		local explore_duration = step.duration or 120 -- Default 2 menit
+		local explore_hint = step.hint or "Jelajahi area ini"
+
+		-- Unfreeze player untuk explore
+		unfreeze_player(player)
+
+		-- Create explore event
+		local explore_event = Instance.new("BindableEvent")
+
+		pending_explore[user_id] = {
+			explore_id = step.explore_id,
+			event = explore_event,
+		}
+
+		-- Fire event ke client untuk start explore
+		game_event:FireClient(player, "explore_start", {
+			explore_id = step.explore_id,
+			duration = explore_duration,
+			hint = explore_hint,
+		})
+
+		local result = explore_event.Event:Wait()
+
+		pending_explore[user_id] = nil
+		explore_event:Destroy()
+
+		if result and step.on_success and step.on_success.knowledge then
+			apply_knowledge(
+				player,
+				step.on_success.knowledge,
+				"Explore berhasil: " .. step.explore_id
+			)
+		end
+
+		return { success = true }
+	end
+
 	if step.action == "chapter_complete" then
 		print("[scene_manager] chapter complete:", player.Name, step.chapter_id)
 
@@ -299,6 +354,18 @@ game_event.OnServerEvent:Connect(function(player, event_name, payload)
 		
 		-- Fire event ke client untuk show homepage
 		game_event:FireClient(player, "show_homepage")
+	elseif event_name == "explore_finished" then
+		print("[scene_manager] explore finished untuk player:", player.Name)
+		
+		local user_id = player.UserId
+		local pending = pending_explore[user_id]
+
+		if pending and pending.event then
+			pending.event:Fire({
+				success = true,
+				explore_id = pending.explore_id,
+			})
+		end
 	end
 end)
 

@@ -33,6 +33,13 @@ local notification_main = player_gui:WaitForChild("visual"):WaitForChild("packin
 local packing_frame = visual_gui:WaitForChild("packing_souvenir")
 local main = packing_frame:WaitForChild("main")
 
+-- Character Frame
+local character = main:WaitForChild("character")
+local character_img = character:WaitForChild("character_img")
+local name_lbl = character:WaitForChild("name_lbl")
+local question_img = character:WaitForChild("question_img")
+local question_lbl = question_img:WaitForChild("question_lbl")
+
 local answer = main:WaitForChild("answer")
 local deskripsi_list = answer:WaitForChild("deskripsi")
 local deskripsi_template = deskripsi_list:WaitForChild("deskripsi_card")
@@ -103,7 +110,7 @@ end
 
 local function add_stroke_to_product(slot)
 	-- Hapus stroke lama jika ada
-		local existing_stroke = slot:FindFirstChild("template_stroke")
+	local existing_stroke = slot:FindFirstChild("template_stroke")
 	if existing_stroke then
 		existing_stroke:Destroy()
 	end
@@ -154,6 +161,12 @@ local function set_button_text(button, text)
 
 	if label then
 		label.Text = text
+	end
+end
+
+local function set_image(image_object, image_id)
+	if not image_object then
+		return
 	end
 end
 
@@ -228,7 +241,7 @@ local function resolve_description(description_id, description_card)
 	if not product_data.is_correct_product then
 		show_notification("Produk yang anda pilih salah!", "error")
 		selected_product = nil
-	
+
 		-- Hapus stroke
 		local stroke = product_slot:FindFirstChild("template_stroke")
 		if stroke then
@@ -240,7 +253,7 @@ local function resolve_description(description_id, description_card)
 	if product_data.description_id ~= description_id then
 		show_notification("Deskripsi yang anda pilih salah!", "error")
 		selected_product = nil
-	
+
 		-- Hapus stroke
 		local stroke = product_slot:FindFirstChild("template_stroke")
 		if stroke then
@@ -371,6 +384,20 @@ local function start_packing_souvenir(data)
 
 	for _, description_data in ipairs(data.descriptions) do
 		description_by_id[description_data.description_id] = description_data
+	end
+
+	-- Set character image (jika ada)
+	if current_minigame.character_img then
+		set_image(character_img, current_minigame.character_img)
+	end
+
+	if current_minigame.character_name then
+		name_lbl.Text = current_minigame.character_name
+	end
+
+	-- Set question label
+	if current_minigame.question_hint then
+		question_lbl.Text = current_minigame.question_hint
 	end
 
 	visual_gui.Enabled = true

@@ -4,6 +4,10 @@ local minigame = {
 		minigame_id = "packing_local_souvenirs",
 		type = "packing_souvenir",
 
+		question_hint = "Jelaskan kapal tradisional yang bernama Ketingting kepada Miss Jane dengan menyusun kata-kata berikut.",
+		character_name = "Jane",
+		character_img = "rbxassetid://JANE_IMAGE_ID", -- Image character yang bertanya
+
 		title = "Packing the Local Souvenirs",
 		mission = "Pilih produk lokal asli Bontang lalu cocokkan dengan deskripsi bahasa Inggris yang tepat.",
 

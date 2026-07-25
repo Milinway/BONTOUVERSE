@@ -8,7 +8,7 @@ local dialog_folder = ReplicatedStorage
 	:WaitForChild("module")
 	:WaitForChild("data")
 	:WaitForChild("dialog")
-
+	
 local dialog_manager = {}
 
 local dialog_cache = {}

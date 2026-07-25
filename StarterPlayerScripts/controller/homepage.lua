@@ -40,6 +40,7 @@ local card_template = card_list:WaitForChild("card_template")
 local menu = play_frame:WaitForChild("menu")
 
 local menu_image = menu:WaitForChild("img")
+local menu_baground = menu:WaitForChild("baground")
 local menu_title = menu:WaitForChild("title")
 local menu_status = menu:WaitForChild("status")
 local start_button = menu:WaitForChild("start")
@@ -57,6 +58,10 @@ local function set_menu_data(chapter_data)
 
 	if chapter_data.image and chapter_data.image ~= "" then
 		menu_image.Image = chapter_data.image
+	end
+
+	if chapter_data.baground and chapter_data.baground ~= "" then
+		menu_baground.Image = chapter_data.baground
 	end
 
 	if chapter_data.is_unlocked then
