@@ -68,11 +68,11 @@ local function spawn_trash_items()
 	for _, trash_part in ipairs(clean_folder:GetChildren()) do
 		if trash_part:IsA("Model") or trash_part:IsA("BasePart") then
 			local cloned_trash = trash_part:Clone()
-			
+
 			-- Ganti nama menjadi "trash" dengan ID
 			trash_index = trash_index + 1
 			cloned_trash.Name = "trash"
-			
+
 			cloned_trash.Parent = workspace_trash_folder
 			table.insert(spawned_trash, {
 				object = cloned_trash,
@@ -93,7 +93,7 @@ local function setup_trash_items(player, trash_list)
 	for _, trash_data in ipairs(trash_list) do
 		local trash_part = trash_data.object
 		local trash_id = trash_data.id
-		
+
 		-- Cari primary part atau gunakan part itu sendiri
 		local interact_part = trash_part
 		if trash_part:IsA("Model") then
@@ -114,6 +114,8 @@ local function setup_trash_items(player, trash_list)
 
 		prompt.ActionText = "Bersihkan"
 		prompt.ObjectText = "Sampah"
+		prompt.MaxActivationDistance = 5
+		prompt.HoldDuration = 1.5
 
 		-- Handle prompt interaction - gunakan closure untuk capture trash_id
 		local function on_trash_triggered(player_who_triggered)

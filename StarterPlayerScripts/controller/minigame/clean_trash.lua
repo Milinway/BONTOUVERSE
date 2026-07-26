@@ -1,4 +1,4 @@
--- StarterPlayerScripts > controller(Folder) > minigame(Folder)> clean_trash(LocalScript)
+-- StarterPlayerScripts > controller(Folder) > minigame(Folder) > clean(LocalScript)
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
@@ -66,7 +66,7 @@ local function show_starter_countdown()
 	starter_timer.Text = "CLEAN!"
 	sound_service.Play("click")
 
-	task.wait(0.5)
+	task.wait(0.2)
 	starter_timer.Visible = false
 	countdown_finished = true
 	is_playing = true

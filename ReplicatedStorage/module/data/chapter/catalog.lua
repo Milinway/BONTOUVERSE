@@ -8,8 +8,8 @@ local catalog = {
 		title = "Chapter 1",
 		subtitle = "Menjadi Seorang Tour Guide",
 
-		image = "rbxassetid://12345",
-		baground = "",
+		image = "rbxassetid://114350959231762",
+		baground = "rbxassetid://126968211524031",
 
 		scene_module = "1_chapter",
 		first_sequence = "chapter_start",

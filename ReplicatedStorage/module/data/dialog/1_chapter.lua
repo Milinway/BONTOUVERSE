@@ -3,7 +3,7 @@ local dialog = {
 	prolog_kelas = {
 		dialog_id = "prolog_kelas",
 		mode = "story_image",
-		background_img = "rbxassetid://121506339228544",
+		background_img = "rbxassetid://121727539628718",
 		lines = {
 			{
 				speaker = "Bu Melinda",
@@ -112,17 +112,17 @@ local dialog = {
 
 	dermaga_welcome = {
 		dialog_id = "dermaga_welcome",
-		mode = "world_dialog",
-		background_img = nil,
+		mode = "story_image",
+		background_img = "rbxassetid://88842970506811",
 		lines = {
 			{
 				speaker = "Windy",
-				character_img = "rbxassetid://KIYA_IMAGE_ID",
-				text = "Hi Mister John, Miss Jane, welcome to Bontang!",
+				character_img = "rbxassetid://131129457535015",
+				text = "Mister John, Miss Jane, welcome to Bontang!",
 			},
 			{
 				speaker = "Windy",
-				character_img = "rbxassetid://KIYA_IMAGE_ID",
+				character_img = "rbxassetid://131129457535015",
 				text = "Hari ini kita akan menyeberang ke surga kecil kami, yakni Pulau Beras Basah.",
 			},
 			{
@@ -138,7 +138,7 @@ local dialog = {
 						choice_response = {
 							{
 								speaker = "Windy",
-								character_img = "rbxassetid://JOHN_IMAGE_ID",
+								character_img = "rbxassetid://131129457535015",
 								text = "Yes! That's why it's called Beras Basah (Wet Rice) Island",
 							},
 							{
@@ -160,7 +160,7 @@ local dialog = {
 						choice_response = {
 							{
 								speaker = "Windy",
-								character_img = "rbxassetid://JOHN_IMAGE_ID",
+								character_img = "rbxassetid://131129457535015",
 								text = "Not just the sand, Mister! The underwater view and the iconic lighthouse are amazing too!",
 							},
 							{
@@ -183,16 +183,16 @@ local dialog = {
 	kapal_intro = {
 		dialog_id = "kapal_intro",
 		mode = "story_image",
-		background_img = "rbxassetid://KAPAL_KETINGTING_IMAGE_ID",
+		background_img = "rbxassetid://111325514733517",
 		lines = {
 			{
 				speaker = "Miss Jane",
 				character_img = "rbxassetid://JANE_IMAGE_ID",
-				text = "Kiya, this boat looks unique. What do local people call it?",
+				text = "Windy, this boat looks unique. What do local people call it?",
 			},
 			{
-				speaker = "Kiya",
-				character_img = "rbxassetid://KIYA_IMAGE_ID",
+				speaker = "Windy",
+				character_img = "rbxassetid://131129457535015",
 				text = "Sst, ayo bantu aku jelaskan ke Miss Jane tentang kapal ini!",
 			},
 		},
@@ -201,11 +201,11 @@ local dialog = {
 	kapal_after_quiz = {
 		dialog_id = "kapal_after_quiz",
 		mode = "story_image",
-		background_img = "rbxassetid://KAPAL_KETINGTING_IMAGE_ID",
+		background_img = "rbxassetid://132270545701111",
 		lines = {
 			{
-				speaker = "Kiya",
-				character_img = "rbxassetid://KIYA_IMAGE_ID",
+				speaker = "Windy",
+				character_img = "rbxassetid://131129457535015",
 				text = "Benar sekali! This traditional boat is called Ketingting, Miss Jane. It uses a specific long-tail motor to move through the shallow waters.",
 			},
 			{
@@ -214,8 +214,8 @@ local dialog = {
 				text = "Oh, I see! Incredible. And how long does it take to reach the island?",
 			},
 			{
-				speaker = "Kiya",
-				character_img = "rbxassetid://KIYA_IMAGE_ID",
+				speaker = "Windy",
+				character_img = "rbxassetid://131129457535015",
 				text = "It takes about 45 minutes, Mister, Miss. So you can just relax and enjoy the beautiful sea breeze and view.",
 			},
 			{
@@ -225,11 +225,39 @@ local dialog = {
 			},
 		},
 	},
-
-	pulau_arrival = {
-		dialog_id = "pulau_arrival",
+	
+	pulau_arrival1 = {
+		dialog_id = "pulau_arrival1",
 		mode = "story_image",
-		background_img = "rbxassetid://PULAU_BERAS_BASAH_IMAGE_ID",
+		background_img = "rbxassetid://104459813734206",
+		lines = {
+			{
+				speaker = "Windy",
+				character_img = "rbxassetid://131129457535015",
+				text = "Sampai! Mr John, Miss Jane Welcome to Beras Basah!",
+			},
+			{
+				speaker = "Miss Jane",
+				character_img = "rbxassetid://KIYA_IMAGE_ID",
+				text = "Oh my look at this masterpiece, this looks Awesome!",
+			},
+			{
+				speaker = "Mister John",
+				character_img = "rbxassetid://KIYA_IMAGE_ID",
+				text = "What a art, ive got to take picture to this thing!",
+			},
+			{
+				speaker = "Windy",
+				character_img = "rbxassetid://131129457535015",
+				text = "Hihihihi, baiklah akan kuberikan kalian beberapa free eksplor untuk bisa berkeliling sekitar Beras Basah ini!",
+			},
+		},
+	},
+
+	pulau_arrival2 = {
+		dialog_id = "pulau_arrival2",
+		mode = "story_image",
+		background_img = "rbxassetid://96121074381057",
 		lines = {
 			{
 				speaker = "Miss Jane",
@@ -237,8 +265,8 @@ local dialog = {
 				text = "Oh look, the island is gorgeous! But... it is a bit sad to see some plastic bottles over there...",
 			},
 			{
-				speaker = "Kiya",
-				character_img = "rbxassetid://KIYA_IMAGE_ID",
+				speaker = "Windy",
+				character_img = "rbxassetid://131129457535015",
 				text = "Aduh, malu-maluin nih! Sebagai pemandu yang baik, kita harus tunjukkan kalau kita peduli sama kebersihan Beras Basah. Ayo kita bersihkan!",
 			},
 		},
@@ -247,7 +275,7 @@ local dialog = {
 	after_minigame3 = {
 		dialog_id = "after_minigame3",
 		mode = "story_image",
-		background_img = "rbxassetid://PULAU_BERAS_BASAH_IMAGE_ID",
+		background_img = "rbxassetid://96121074381057",
 		lines = {
 			{
 				speaker = "Miss Jane",
@@ -255,8 +283,8 @@ local dialog = {
 				text = "You guys are local heroes! The island looks so clean and pristine now!...",
 			},
 			{
-				speaker = "Kiya",
-				character_img = "rbxassetid://KIYA_IMAGE_ID",
+				speaker = "Windy",
+				character_img = "rbxassetid://131129457535015",
 				text = "Ya benar, ini berkat kepedulian kita terhadap lingkungan sekitar!",
 			},
 			{
@@ -270,17 +298,17 @@ local dialog = {
 	ending_kelas = {
 		dialog_id = "ending_kelas",
 		mode = "story_image",
-		background_img = "rbxassetid://CLASSROOM_IMAGE_ID",
+		background_img = "rbxassetid://121727539628718",
 		lines = {
 			{
-				speaker = "Kiya",
+				speaker = "Windy",
 				character_img = "rbxassetid://KIYA_IMAGE_ID",
 				text = "...Nah, dari perjalanan hari pertama itu, aku sadar kalau turis asing itu suka banget sama Amplang Ikan kita dan kagum sama keindahan mercusuar. Kalau kita jaga wisatanya tetap bersih dan kelola dengan baik, UMKM warga lokal pasti makin laku keras dan ekonomi Bontang bakal maju!",
 			},
 			{
 				speaker = "Bu Melinda",
 				character_img = "rbxassetid://BU_MELINDA_IMAGE_ID",
-				text = "Luar biasa, Kiya! Cerita liburan yang sangat inspiratif dan penuh jiwa wirausaha. Nah anak-anak, dari cerita Kiya tadi, siapa yang bisa menebak apa nilai jual utama dari Pulau Beras Basah?",
+				text = "Luar biasa, Windy! Cerita liburan yang sangat inspiratif dan penuh jiwa wirausaha. Nah anak-anak, dari cerita Kiya tadi, siapa yang bisa menebak apa nilai jual utama dari Pulau Beras Basah?",
 			},
 		},
 	},

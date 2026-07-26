@@ -351,12 +351,12 @@ end
 game_event.OnServerEvent:Connect(function(player, event_name, payload)
 	if event_name == "ending_completed" then
 		print("[scene_manager] ending completed untuk player:", player.Name)
-		
+
 		-- Fire event ke client untuk show homepage
 		game_event:FireClient(player, "show_homepage")
 	elseif event_name == "explore_finished" then
 		print("[scene_manager] explore finished untuk player:", player.Name)
-		
+
 		local user_id = player.UserId
 		local pending = pending_explore[user_id]
 

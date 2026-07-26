@@ -8,7 +8,7 @@ local dialog_folder = ReplicatedStorage
 	:WaitForChild("module")
 	:WaitForChild("data")
 	:WaitForChild("dialog")
-	
+
 local dialog_manager = {}
 
 local dialog_cache = {}
@@ -153,7 +153,7 @@ function dialog_manager.play(player, dialog_id, choice_response)
 
 	-- Unfreeze player setelah dialog selesai
 	unfreeze_player(player)
-	
+
 	-- Signal ke client untuk unfreeze (untuk keamanan double-check)
 	game_event:FireClient(player, "player_unfreeze")
 

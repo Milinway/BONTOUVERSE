@@ -1,20 +1,19 @@
 -- ReplicatedStorage > handler(Folder) > gui(Folder) > homepage(Folder) > frame(ModuleScript)
 local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
 
 local FrameService = {}
-
 local page_state = setmetatable({}, { __mode = "k" })
 local interaction_state = setmetatable({}, { __mode = "k" })
 
 local open_tween_info = TweenInfo.new(
-	0.45,
-	Enum.EasingStyle.Quad,
+	0.5,
+	Enum.EasingStyle.Sine,
 	Enum.EasingDirection.Out
 )
-
 local close_tween_info = TweenInfo.new(
-	0.35,
-	Enum.EasingStyle.Quad,
+	0.4,
+	Enum.EasingStyle.Sine,
 	Enum.EasingDirection.In
 )
 
@@ -22,13 +21,12 @@ local function get_page_state(frame)
 	if page_state[frame] then
 		return page_state[frame]
 	end
-
 	page_state[frame] = {
 		open_position = frame.Position,
 		open_size = frame.Size,
 		is_busy = false,
+		tween = nil,
 	}
-
 	return page_state[frame]
 end
 
@@ -36,12 +34,11 @@ local function get_interaction_state(interaction)
 	if interaction_state[interaction] then
 		return interaction_state[interaction]
 	end
-
 	interaction_state[interaction] = {
 		open_position = interaction.Position,
 		open_size = interaction.Size,
+		tween = nil,
 	}
-
 	return interaction_state[interaction]
 end
 
@@ -54,13 +51,19 @@ local function get_bottom_position(position)
 	)
 end
 
+-- hentikan tween lama sebelum mulai tween baru, biar gak numpuk/patah
+local function cancel_tween(state)
+	if state.tween then
+		state.tween:Cancel()
+		state.tween = nil
+	end
+end
+
 function FrameService.PreparePage(frame)
 	if not frame or not frame:IsA("GuiObject") then
 		return
 	end
-
 	local state = get_page_state(frame)
-
 	frame.Size = state.open_size
 	frame.Position = state.open_position
 	frame.Visible = false
@@ -70,9 +73,7 @@ function FrameService.PrepareInteraction(interaction)
 	if not interaction or not interaction:IsA("GuiObject") then
 		return
 	end
-
 	local state = get_interaction_state(interaction)
-
 	interaction.Size = state.open_size
 	interaction.Position = state.open_position
 	interaction.Visible = true
@@ -82,16 +83,16 @@ function FrameService.OpenMenu(frame, interaction)
 	if not frame or not frame:IsA("GuiObject") then
 		return false
 	end
-
 	local state = get_page_state(frame)
-
 	if state.is_busy then
 		return false
 	end
-
 	state.is_busy = true
+	cancel_tween(state)
 
 	if interaction then
+		local interaction_data = get_interaction_state(interaction)
+		cancel_tween(interaction_data)
 		interaction.Visible = false
 	end
 
@@ -99,16 +100,20 @@ function FrameService.OpenMenu(frame, interaction)
 	frame.Size = state.open_size
 	frame.Position = get_bottom_position(state.open_position)
 
+	-- tunggu satu heartbeat biar posisi awal ter-render dulu sebelum tween jalan
+	RunService.Heartbeat:Wait()
+
 	local tween = TweenService:Create(frame, open_tween_info, {
 		Position = state.open_position,
 	})
-
-	tween:Play()
-
-	tween.Completed:Connect(function()
+	state.tween = tween
+	tween.Completed:Connect(function(playback_state)
+		if state.tween == tween then
+			state.tween = nil
+		end
 		state.is_busy = false
 	end)
-
+	tween:Play()
 	return true
 end
 
@@ -116,31 +121,29 @@ function FrameService.CloseMenu(frame, interaction)
 	if not frame or not frame:IsA("GuiObject") then
 		return false
 	end
-
 	local state = get_page_state(frame)
-
 	if state.is_busy then
 		return false
 	end
-
 	state.is_busy = true
+	cancel_tween(state)
 
 	local tween = TweenService:Create(frame, close_tween_info, {
 		Position = get_bottom_position(state.open_position),
 	})
-
-	tween:Play()
-
-	tween.Completed:Connect(function()
+	state.tween = tween
+	tween.Completed:Connect(function(playback_state)
+		if state.tween == tween then
+			state.tween = nil
+		end
 		frame.Visible = false
 		frame.Position = state.open_position
 		frame.Size = state.open_size
-
 		state.is_busy = false
 
-		if interaction then
+		if interaction and playback_state == Enum.PlaybackState.Completed then
 			local interaction_data = get_interaction_state(interaction)
-
+			cancel_tween(interaction_data)
 			interaction.Visible = true
 			interaction.Size = interaction_data.open_size
 			interaction.Position = get_bottom_position(interaction_data.open_position)
@@ -152,11 +155,16 @@ function FrameService.CloseMenu(frame, interaction)
 					Position = interaction_data.open_position,
 				}
 			)
-
+			interaction_data.tween = interaction_tween
+			interaction_tween.Completed:Connect(function()
+				if interaction_data.tween == interaction_tween then
+					interaction_data.tween = nil
+				end
+			end)
 			interaction_tween:Play()
 		end
 	end)
-
+	tween:Play()
 	return true
 end
 

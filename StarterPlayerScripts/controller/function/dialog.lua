@@ -1,4 +1,4 @@
--- StarterPlayerScripts > controller(Folder) > dialog(LocalScript)
+-- StarterPlayerScripts > controller(Folder) > function(Folder) > dialog(LocalScript)
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 
@@ -61,6 +61,15 @@ local skip_unlock_token = 0
 -- skip_spam_count otomatis balik ke 0.
 local skip_streak_timeout = 3
 local skip_streak_token = 0
+
+-- Cooldown singkat KHUSUS abis skip -- beda sama skip_locked di atas yang
+-- baru aktif kalau udah spam max_skip_spam kali beruntun. Ini langsung
+-- aktif SETIAP kali skip (next_btn diklik pas lagi typing), cuma nahan
+-- next_btn selama post_skip_cooldown_duration detik. Klik advance biasa
+-- (pas gak lagi typing) sama sekali gak kesentuh cooldown ini.
+local post_skip_cooldown_duration = 2
+local post_skip_cooldown_active = false
+local post_skip_cooldown_token = 0
 
 local IMAGE_SKIP = "rbxassetid://118183992128466"
 local IMAGE_NEXT = "rbxassetid://133433507076361"
@@ -167,7 +176,9 @@ update_next_button_state = function()
 		next_btn.Image = IMAGE_NEXT
 	end
 
-	if skip_locked and is_typing then
+	if post_skip_cooldown_active then
+		next_btn.Visible = false
+	elseif skip_locked and is_typing then
 		next_btn.Visible = false
 	else
 		next_btn.Visible = true
@@ -200,6 +211,30 @@ local function lock_skip()
 			update_next_button_state()
 		end
 
+	end)
+end
+
+-- Cooldown pendek yang langsung jalan TIAP KALI skip terjadi (next_btn
+-- diklik pas lagi typing). Beda sama lock_skip() di atas yang cuma aktif
+-- kalau udah keseringan (>= max_skip_spam kali beruntun).
+local function start_post_skip_cooldown()
+	post_skip_cooldown_active = true
+	post_skip_cooldown_token += 1
+
+	local token = post_skip_cooldown_token
+
+	update_next_button_state()
+
+	task.delay(post_skip_cooldown_duration, function()
+		if token ~= post_skip_cooldown_token then
+			return
+		end
+
+		post_skip_cooldown_active = false
+
+		if is_playing then
+			update_next_button_state()
+		end
 	end)
 end
 
@@ -236,6 +271,8 @@ local function finish_dialog(choice_id, is_correct)
 	skip_locked = false
 	skip_unlock_token += 1
 	skip_streak_token += 1
+	post_skip_cooldown_active = false
+	post_skip_cooldown_token += 1
 end
 
 local function stop_current_voice()
@@ -355,6 +392,8 @@ local function start_dialog(dialog_data)
 	skip_locked = false
 	skip_unlock_token += 1
 	skip_streak_token += 1
+	post_skip_cooldown_active = false
+	post_skip_cooldown_token += 1
 
 	dialog_gui.Enabled = true
 	main.Visible = true
@@ -387,6 +426,10 @@ next_btn.Activated:Connect(function()
 			return
 		end
 
+		if post_skip_cooldown_active then
+			return
+		end
+
 		skip_spam_count += 1
 
 		-- Hitung mundur "beruntun": kalau tidak ada skip baru dalam
@@ -414,7 +457,9 @@ next_btn.Activated:Connect(function()
 
 		dialoge_lbl.MaxVisibleGraphemes = -1
 
-		update_next_button_state()
+		-- Cooldown 2 detik khusus abis skip ini. Klik advance biasa (pas
+		-- gak lagi typing, di bawah) sama sekali gak kena cooldown ini.
+		start_post_skip_cooldown()
 
 		return
 	end
