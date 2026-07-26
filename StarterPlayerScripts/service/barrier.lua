@@ -32,7 +32,7 @@ local areaState: {[string]: any} = {}
     Inisialisasi state untuk semua area
 ]]
 local function initializeAreaState()
-	local barrierFolder = workspace:FindFirstChild("BlokPart")
+	local barrierFolder = workspace:FindFirstChild("barrier")
 
 	if not barrierFolder then
 		warn("BarrierController: Folder 'Barier' tidak ditemukan di Workspace")
@@ -133,7 +133,7 @@ local function checkDistancesToAreas()
 	end
 
 	local playerPos = character.HumanoidRootPart.Position
-	local barrierFolder = workspace:FindFirstChild("Barier")
+	local barrierFolder = workspace:FindFirstChild("barrier")
 
 	if not barrierFolder then
 		return
