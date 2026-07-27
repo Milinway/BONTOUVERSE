@@ -1,4 +1,4 @@
--- StarterPlayer > StarterCharacterScripts > controller(Folder) > ending(LocalScript)
+-- StarterPlayer > StarterCharacterScripts > controller(Folder) > function(Folder) > ending(LocalScript)
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
@@ -19,6 +19,9 @@ local function get_notification_frame()
 	return nil
 end
 
+--[[
+	Fade label in dan out
+]]
 local function fade_label_in_out(label, chapter_name, duration)
 	if not label then return end
 
@@ -35,7 +38,7 @@ local function fade_label_in_out(label, chapter_name, duration)
 	tween_in:Play()
 	tween_in.Completed:Wait()
 
-	-- Wait di tengah
+	-- Wait di tengah (show text untuk beberapa saat)
 	task.wait(2)
 
 	-- Fade out
@@ -47,6 +50,9 @@ local function fade_label_in_out(label, chapter_name, duration)
 	label.Visible = false
 end
 
+--[[
+	Show ending screen dan kick player setelah selesai
+]]
 local function show_ending(chapter_name)
 	local fade_frame = get_notification_frame()
 	if not fade_frame then
@@ -83,30 +89,18 @@ local function show_ending(chapter_name)
 	notification.Enabled = false
 	fade_frame.Visible = false
 
-	-- Wait sebentar sebelum fade out ke homepage
+	-- ✅ PERBAIKAN: Kick player setelah ending text selesai
+	print("[ending] Kicking player setelah ending chapter '" .. chapter_name .. "' selesai")
+	task.wait(0.5)  -- Wait sebentar sebelum kick
+
+	-- Fire event ke server untuk notify bahwa ending sudah selesai (untuk logging/stats)
+	game_event:FireServer("ending_completed", {
+		chapter_name = chapter_name,
+	})
+
+	-- Kick player dengan custom message
 	task.wait(0.5)
-
-	-- Fade out ke homepage
-	local ui_fade = player_gui:FindFirstChild("notification")
-	if ui_fade then
-		local fade_frame_main = ui_fade:FindFirstChild("fade")
-		if fade_frame_main then
-			ui_fade.Enabled = true
-			fade_frame_main.Visible = true
-
-			local tween_info = TweenInfo.new(1.5, Enum.EasingStyle.Linear)
-			local tween = TweenService:Create(fade_frame_main, tween_info, {BackgroundTransparency = 0})
-			tween:Play()
-			tween.Completed:Wait()
-
-			-- Fire event ke server untuk kembali ke homepage
-			game_event:FireServer("ending_completed", {
-				chapter_name = chapter_name,
-			})
-
-			task.wait(1)
-		end
-	end
+	player:Kick("Chapter \"" .. chapter_name .. "\" completed! Thanks for playing!")
 end
 
 -- Listen for ending event dari server

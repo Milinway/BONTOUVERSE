@@ -1,9 +1,7 @@
--- FILE 3: ServerScriptService/spawn.lua (REVISED)
+-- FILE: ServerScriptService/spawn.lua (FIXED)
 --[[
-    BarrierSpawner Server Script - REVISED
-    Bug fix: 
-    1. Decal tween issue (index mismatch)
-    2. Collect decal per block, match index dengan ripple
+    BarrierSpawner Server Script - FINAL REVISION
+    Bug fix: Proper index mapping untuk ripple effect
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -14,16 +12,16 @@ local BarrierTween = require(ReplicatedStorage.handler.barrier.tween)
 local barrierEvent = ReplicatedStorage:WaitForChild("event_remote"):WaitForChild("barrier_event")
 local blokTemplate = game.ServerStorage:WaitForChild("assets"):WaitForChild("BlokPart")
 
-local RIPPLE_DELAY = 0.04
-local DESTROY_RIPPLE_DELAY = 0.04
+local RIPPLE_DELAY = 0.05
+local DESTROY_RIPPLE_DELAY = 0.05
 
 --[[
-    State: Menyimpan block + decal per index untuk matching ripple
+    State structure:
     {
         [areaName] = {
             areaRef = Part,
             gridGenerator = GridGenerator,
-            frames = {CFrame},
+            frames = {CFrame array},
             blocksData = {
                 [1] = {block = Part, decals = {Decal array}},
                 [2] = {block = Part, decals = {Decal array}},
@@ -83,7 +81,7 @@ local function generateGrid(areaName: string)
 end
 
 --[[
-    Spawn blocks - REVISED: Collect decal per block index
+    ✅ FIXED: Spawn blocks dengan proper decal management
 ]]
 local function spawnBlocks(areaName: string, playerPos: Vector3)
     local state = barrierState[areaName]
@@ -98,14 +96,14 @@ local function spawnBlocks(areaName: string, playerPos: Vector3)
     
     print("BarrierSpawner: Spawning " .. #frames .. " blocks untuk '" .. areaName .. "'")
     
-    -- Clone block dan kumpulkan decal per index
+    -- Clone block dan simpan dengan index yang match
     for i, frame in ipairs(frames) do
         local newBlock = blokTemplate:Clone()
         newBlock.CFrame = frame
-        newBlock.CanCollide = false  -- ✅ Tidak collision saat tween
+        newBlock.CanCollide = false
         newBlock.Parent = areaRef
         
-        -- ✅ PENTING: Kumpulkan decal dari block ini
+        -- ✅ Kumpulkan decal dari block ini
         local blockDecals = {}
         for _, child in ipairs(newBlock:GetDescendants()) do
             if child:IsA("Decal") then
@@ -114,7 +112,7 @@ local function spawnBlocks(areaName: string, playerPos: Vector3)
             end
         end
         
-        -- ✅ Simpan block + decals dengan index yang sama
+        -- ✅ Simpan dengan index yang MATCH dengan frames
         state.blocksData[i] = {
             block = newBlock,
             decals = blockDecals,
@@ -123,28 +121,42 @@ local function spawnBlocks(areaName: string, playerPos: Vector3)
     
     state.isLoaded = true
     
-    -- ✅ Tween HANYA decals, dengan index yang tepat
+    -- ✅ FIXED: Ripple dengan proper index mapping
     if state.gridGenerator and #state.frames > 0 then
         local sortedIndices = state.gridGenerator:sortFramesByDistance(playerPos, frames)
         
-        -- Kumpulkan semua decals dalam urutan index
-        local allDecals = {}
-        for i, blockData in ipairs(state.blocksData) do
-            for _, decal in ipairs(blockData.decals) do
-                table.insert(allDecals, decal)
-            end
-        end
+        print("BarrierSpawner: Starting ripple for '" .. areaName .. "' with " .. #sortedIndices .. " indices")
         
-        if #allDecals > 0 then
-            BarrierTween.fadeInRippleDecals(allDecals, sortedIndices, RIPPLE_DELAY, function()
-                print("BarrierSpawner: '" .. areaName .. "' fully loaded")
-            end)
-        end
+        -- ✅ Tween per frame index (tidak flat array)
+        task.spawn(function()
+            for rippleOrder, frameIndex in ipairs(sortedIndices) do
+                local blockData = state.blocksData[frameIndex]
+                
+                if blockData then
+                    local decals = blockData.decals
+                    
+                    -- Wait untuk ripple delay
+                    local delay = (rippleOrder - 1) * RIPPLE_DELAY
+                    task.wait(delay)
+                    
+                    -- Fade in semua decal dari block ini
+                    for _, decal in ipairs(decals) do
+                        if decal and decal.Parent then
+                            BarrierTween.fadeInDecal(decal)
+                        end
+                    end
+                    
+                    print("BarrierSpawner: Block " .. frameIndex .. " loaded (order " .. rippleOrder .. ")")
+                end
+            end
+            
+            print("BarrierSpawner: '" .. areaName .. "' fully loaded")
+        end)
     end
 end
 
 --[[
-    Despawn blocks - REVISED: Tween decal dengan index tepat
+    ✅ FIXED: Despawn dengan proper index mapping
 ]]
 local function despawnBlocks(areaName: string, playerPos: Vector3)
     local state = barrierState[areaName]
@@ -158,33 +170,42 @@ local function despawnBlocks(areaName: string, playerPos: Vector3)
     local blocksData = state.blocksData
     
     if #blocksData == 0 then
-        -- Destroy langsung jika kosong
-        for _, blockData in ipairs(blocksData) do
-            if blockData.block and blockData.block.Parent then
-                blockData.block:Destroy()
-            end
-        end
         state.blocksData = {}
         return
     end
     
-    -- Kumpulkan semua decals
-    local allDecals = {}
-    for i, blockData in ipairs(blocksData) do
-        for _, decal in ipairs(blockData.decals) do
-            table.insert(allDecals, decal)
-        end
-    end
-    
-    -- Fade out dengan ripple
     local sortedIndices = state.gridGenerator:sortFramesByDistance(playerPos, frames)
-    BarrierTween.fadeOutRippleDecals(allDecals, sortedIndices, DESTROY_RIPPLE_DELAY, function()
-        -- Destroy semua block setelah tween selesai
+    
+    -- ✅ Fade out per frame index
+    task.spawn(function()
+        for rippleOrder, frameIndex in ipairs(sortedIndices) do
+            local blockData = state.blocksData[frameIndex]
+            
+            if blockData then
+                local decals = blockData.decals
+                
+                local delay = (rippleOrder - 1) * DESTROY_RIPPLE_DELAY
+                task.wait(delay)
+                
+                for _, decal in ipairs(decals) do
+                    if decal and decal.Parent then
+                        BarrierTween.fadeOutDecal(decal)
+                    end
+                end
+                
+                print("BarrierSpawner: Block " .. frameIndex .. " unloading (order " .. rippleOrder .. ")")
+            end
+        end
+        
+        -- Destroy semua block setelah semua decal selesai fade out
+        task.wait(0.6)  -- Wait untuk fade out tween selesai
+        
         for _, blockData in ipairs(blocksData) do
             if blockData.block and blockData.block.Parent then
                 blockData.block:Destroy()
             end
         end
+        
         state.blocksData = {}
         print("BarrierSpawner: '" .. areaName .. "' fully unloaded")
     end)
@@ -205,7 +226,7 @@ local function addPlayerToArea(player: Player, areaName: string)
     table.insert(state.playersInRadius, player)
     
     if #state.playersInRadius == 1 then
-        print("BarrierSpawner: First player in '" .. areaName .. "', spawning")
+        print("BarrierSpawner: First player in '" .. areaName .. "'")
         local playerCharacter = player.Character
         local playerPos = playerCharacter and playerCharacter.HumanoidRootPart.Position or Vector3.new(0, 0, 0)
         spawnBlocks(areaName, playerPos)
@@ -226,7 +247,7 @@ local function removePlayerFromArea(player: Player, areaName: string)
     end
     
     if #state.playersInRadius == 0 then
-        print("BarrierSpawner: No players in '" .. areaName .. "', despawning")
+        print("BarrierSpawner: No players in '" .. areaName .. "'")
         local playerCharacter = player.Character
         local playerPos = playerCharacter and playerCharacter.HumanoidRootPart.Position or Vector3.new(0, 0, 0)
         despawnBlocks(areaName, playerPos)
